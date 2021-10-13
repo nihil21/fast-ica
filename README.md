@@ -22,3 +22,5 @@ where:
 
 The program writes the original signals, the mixtures and the reconstructed signals in three binary files (`S.bin`, `X.bin` and `S_res.bin`, respectively).
 Such binary files can be read and plotted using the `pyutils/plot_signals.py` Python scripts, which accepts an argument describing the precision of the data type, either `float` (default) for 32 bit or `double` for 64 bit.
+
+Moreover, in the `pyutils` folder there's a Jupyter notebook and a `fast_ica.py` modules which implement the same algorithms in Python.
