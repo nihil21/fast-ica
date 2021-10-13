@@ -12,3 +12,8 @@ __pycache__/
 
 # Build directory
 /cmake-build-debug/
+
+# Binary files
+S.bin
+X.bin
+S_res.bin
