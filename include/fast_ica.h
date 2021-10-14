@@ -17,6 +17,6 @@ typedef enum GFunc {
     Cube
 } GFunc;
 
-Matrix *fast_ica(Matrix *x, bool whiten, FastICAStrategy strategy, GFunc g_func, Matrix *w_init, fp threshold, int max_iter);
+Matrix *fast_ica(Matrix *x, bool whiten, FastICAStrategy strategy, GFunc g_func, fp threshold, int max_iter);
 
 #endif //FAST_ICA_FAST_ICA_H

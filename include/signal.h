@@ -13,7 +13,7 @@
  */
 Vector *sine_vec(Vector *v);
 Vector *sgn_vec(Vector *v);
-Vector *floor_vec(Vector *v);
+Vector *mod_vec(Vector *v, fp k);
 
 /*
  * Signals
@@ -21,6 +21,6 @@ Vector *floor_vec(Vector *v);
 Vector *generate_sine_wave(fp amp, fp freq, fp phase, int n_samples, fp range);
 Vector *generate_square_wave(fp amp, fp freq, fp phase, int n_samples, fp range);
 Vector *generate_sawtooth_wave(fp amp, fp freq, fp phase, int n_samples, fp range);
-Matrix *generate_signals(int n_samples, fp range);
+Matrix *generate_signals(int n_samples, fp range, bool add_noise);
 
 #endif //FAST_ICA_SIGNAL_H

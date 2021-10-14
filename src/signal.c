@@ -106,7 +106,7 @@ Vector *generate_sawtooth_wave(fp amp, fp freq, fp phase, int n_samples, fp rang
     return s;
 }
 
-Matrix *generate_signals(int n_samples, fp range) {
+Matrix *generate_signals(int n_samples, fp range, bool add_noise) {
     // First component: sine wave
     Vector *s1 = generate_sine_wave(1.5f, 0.3f, -PI, n_samples, range);
     // Second component: square wave
@@ -121,15 +121,17 @@ Matrix *generate_signals(int n_samples, fp range) {
     paste_row(&s, s3, 2);
 
     // Apply gaussian noise
-    Matrix *ns = mat_randn(s->height, s->width);
-    mat_scale_(&ns, 0.2f);
-    mat_add_(&s, ns);
+    if (add_noise) {
+        Matrix *ns = mat_randn(s->height, s->width);
+        mat_scale_(&ns, 0.2f);
+        mat_add_(&s, ns);
+        free_mat(ns);
+    }
 
-    // Free temp vectors
+    // Free memory
     free_vec(s1);
     free_vec(s2);
     free_vec(s3);
-    free_mat(ns);
 
     return s;
 }

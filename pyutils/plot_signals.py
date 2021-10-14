@@ -32,24 +32,27 @@ def read_binary(filename: str, fp: Dict) -> np.ndarray:
 def plot_signals(s, x, sr) -> None:
     assert s.shape == x.shape, "Signals and observations should have the same shape"
     assert x.shape == sr.shape, "Observations and reconstructed signals should have the same shape"
-    n_comp = s.shape[0]
 
-    plt.figure(figsize=(15, 20))
-    for i in range(n_comp):
-        plt.subplot(3 * n_comp, 1, i + 1)
-        plt.title(f"Observation {i + 1}")
-        plt.plot(x[i])
+    plt.figure(figsize=(15, 10))
+
+    n_comp = s.shape[0]
+    models = [x, s, sr]
+    names = [
+        "Observations (mixed signal)",
+        "True Sources",
+        "ICA recovered signals",
+    ]
+    colors = ["red", "steelblue", "orange"]
+    plots = len(models)
+
+    for ii, (model, name) in enumerate(zip(models, names)):
+        plt.subplot(plots, 1, ii + 1)
+        plt.title(name)
+        plt.plot(model[0], color=colors[0])
+        plt.plot(model[1], color=colors[1])
+        plt.plot(model[2], color=colors[2])
         plt.grid()
-    for i in range(n_comp):
-        plt.subplot(3 * n_comp, 1, n_comp + i + 1)
-        plt.title(f"True signal {i + 1}")
-        plt.plot(s[i])
-        plt.grid()
-    for i in range(n_comp):
-        plt.subplot(3 * n_comp, 1, 2 * n_comp + i + 1)
-        plt.title(f"Reconstructed signal {i + 1}")
-        plt.plot(sr[i])
-        plt.grid()
+
     plt.tight_layout()
     plt.show()
 

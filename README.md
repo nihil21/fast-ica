@@ -13,7 +13,7 @@ make
 ./fast_ica [STRATEGY [G_FUNCTION [N_SAMPLES [SAMPLING_WINDOW_SIZE [THRESHOLD [ MAX_ITER [VERBOSE]]]]]]
 ```
 where:
-- `strategy` can be `0` (*Deflation*, default) or `1` (*Parallel*);
+- `strategy` can be `0` (*Parallel*, default) or `1` (*Deflation*);
 - `g_function` can be `0` (*LogCosh*, default), `1` (*Exp*) or `2` (*Cube*);
 - `n_samples` must be a non-negative integer defining the number of samples in each time signal;
 - `sampling_window_size` must be a non-negative float defining the range in which the samples are taken;

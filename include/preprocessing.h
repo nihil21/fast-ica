@@ -8,6 +8,6 @@
 #include "tuple.h"
 
 Tuple *center(Matrix *x);
-Matrix *whitening(Matrix *x, bool center_data);
+Tuple *whitening(Matrix *x, bool center_data);
 
 #endif //FAST_ICA_PREPROCESSING_H

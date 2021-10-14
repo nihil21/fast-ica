@@ -9,37 +9,40 @@
 
 int main(int argc, char **argv) {
     // Set default arguments
-    FastICAStrategy strategy = Deflation;
+    FastICAStrategy strategy = Parallel;
     GFunc g_function = LogCosh;
     int g_selector;
     int n_samples = 1000;
     fp sampling_window_size = 10;
     fp threshold = 1e-4f;
     int max_iter = 3000;
+    bool add_noise = true;
     bool verbose = true;
     // Read input args
     char *end;
     switch (argc) {
+        case 9:
+            verbose = (int) strtol(argv[8], &end, 2);
         case 8:
-            verbose = (int) strtol(argv[7], &end, 2);
+            add_noise = (int) strtol(argv[7], &end, 2);
         case 7:
             max_iter = (int) strtol(argv[6], &end, 10);
-            assert(sampling_window_size >= 0, "The maximum number of iteration must be non-negative.");
+            assert(max_iter > 0, "The maximum number of iteration must be positive.");
         case 6:
-            threshold = (fp) strtol(argv[5], &end, 10);
-            assert(sampling_window_size >= 0, "The threshold must be non-negative.");
+            threshold = (fp) strtof(argv[5], &end);
+            assert(threshold > 0, "The threshold must be positive.");
         case 5:
-            sampling_window_size = (fp) strtol(argv[4], &end, 10);
-            assert(sampling_window_size >= 0, "The sampling window size must be non-negative.");
+            sampling_window_size = (fp) strtof(argv[4], &end);
+            assert(sampling_window_size > 0, "The sampling window size must be positive.");
         case 4:
             n_samples = (int) strtol(argv[3], &end, 10);
-            assert(sampling_window_size >= 0, "The number of samples must be non-negative.");
+            assert(n_samples > 0, "The number of samples must be positive.");
         case 3:
             g_selector = (int) strtol(argv[2], &end, 3);
             g_function = g_selector == 0 ? LogCosh : (g_selector == 1 ? Exp : Cube);
         case 2:
             if ((int) strtol(argv[1], &end, 2))
-                strategy = Parallel;
+                strategy = Deflation;
         case 1:
             break;
         default:
@@ -49,7 +52,7 @@ int main(int argc, char **argv) {
     srand48(time(NULL));  // set seed
 
     // Create matrix S of original signals (n_components, n_samples)
-    Matrix *s = generate_signals(n_samples, sampling_window_size);
+    Matrix *s = generate_signals(n_samples, sampling_window_size, add_noise);
     if (verbose) {
         printf("Original signals:\n");
         mat_print(s);
@@ -76,7 +79,7 @@ int main(int argc, char **argv) {
     mat_write("../X.bin", x);
 
     // Perform FastICA
-    Matrix *s_res = fast_ica(x, true, strategy, g_function, NULL, threshold, max_iter);
+    Matrix *s_res = fast_ica(x, true, strategy, g_function, threshold, max_iter);
     if (verbose) {
         printf("Restored signals:\n");
         mat_print(s_res);

@@ -25,7 +25,7 @@ def whitening(x: np.ndarray) -> np.ndarray:
     # White data
     xw = white_mtx @ x
 
-    return xw
+    return xw, white_mtx
 
 
 def _gram_schmidt_decorrelation(w_i_new: np.ndarray, w: np.ndarray, i: int) -> np.ndarray:
@@ -44,16 +44,16 @@ def _symmetric_decorrelation(w: np.ndarray) -> np.ndarray:
     return w
 
 
-def _ica_def(xw, g, w_init, threshold, max_iter):
-    n_units = xw.shape[0]
+def _ica_def(xw, g, threshold, max_iter):
+    n_units, n_samples = xw.shape
 
-    # Output weights
-    w = np.empty(shape=(n_units, n_units), dtype=np.float32)
+    # Initialize weights randomly
+    w = np.random.randn(n_units, n_units)
 
     # Iterate over units
     for i in range(n_units):
         # Initialize i-th neuron
-        w_i = w_init[i, :].copy()
+        w_i = w[i, :].copy()
         w_i /= np.linalg.norm(w_i)
 
         for _ in range(max_iter):
@@ -61,7 +61,7 @@ def _ica_def(xw, g, w_init, threshold, max_iter):
             ws = w_i @ xw
             g_ws, g_ws_prime = g(ws)
             # E[(n_samples,) * (n_units, n_samples)] -> E[(n_units, n_samples)] -> (n_units,)
-            a = (xw * g_ws).mean(axis=-1)
+            a = xw @ g_ws.T / n_samples
             # E[(n_samples,)] * (n_units,) -> (,) * (n_units,) -> (n_units,)
             b = g_ws_prime.mean() * w_i
 
@@ -86,9 +86,12 @@ def _ica_def(xw, g, w_init, threshold, max_iter):
     return w
 
 
-def _ica_par(xw, g, w_init, threshold, max_iter):
-    # Initialize weights and decorrelate
-    w = _symmetric_decorrelation(w_init)
+def _ica_par(xw, g, threshold, max_iter):
+    n_units, n_samples = xw.shape
+
+    # Initialize weights randomly and decorrelate
+    w = np.array([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9]])  # np.random.randn(n_units, n_units)
+    w = _symmetric_decorrelation(w)
     
     for _ in range(max_iter):
         # (n_units, n_units) @ (n_units, n_samples) -> (n_units, n_samples)
@@ -96,7 +99,8 @@ def _ica_par(xw, g, w_init, threshold, max_iter):
         g_ws, g_ws_prime = g(ws)
         # E[(n_units, 1, n_samples) * (n_units, n_samples)] -> E[(n_units, n_units, n_samples)] -> (n_units, n_units)
         a = (xw * g_ws[:, np.newaxis]).mean(axis=-1)
-        # E[(n_units, 1, n_samples)] * (n_units, n_units) -> (n_units, 1) * (n_units, n_units) -> (n_units, n_units)
+        
+        # E[(n_units, n_samples)] * (n_units, n_units) -> (n_units, 1) * (n_units, n_units) -> (n_units, n_units)
         b = g_ws_prime.mean(axis=-1)[:, np.newaxis] * w
         
         # Compute new weight
@@ -146,16 +150,15 @@ def _cube(x: np.ndarray):
 def fast_ica(
     x: np.ndarray,
     whiten: bool = True,
-    strategy: str = "deflation",
+    strategy: str = "parallel",
     g_func: str = "logcosh",
-    w_init: Optional[np.ndarray] = None,
     threshold: float = 1e-4,
     max_iter: int = 5000
 ):
     # Center and whiten, if required
     if whiten:
         xw, x_mean = centering(x)
-        xw = whitening(xw)
+        xw, white_mtx = whitening(xw)
     else:
         xw = x.copy()
 
@@ -165,9 +168,6 @@ def fast_ica(
         "exp": _exp,
         "cube": _cube
     }
-    
-    if w_init is None:
-        w_init = np.random.randn(xw.shape[0], xw.shape[0])
 
     # Strategy dictionary
     func_dict = {
@@ -176,7 +176,6 @@ def fast_ica(
     }
     kwargs = {
         "g": g_dict[g_func],
-        "w_init": w_init,
         "threshold": threshold,
         "max_iter": max_iter,
     }
@@ -185,8 +184,12 @@ def fast_ica(
     
     s = w @ xw
     
-    if whiten:
-        s_mean = w @ x_mean
-        s -= s_mean
+    # if whiten:
+        # De-whiten mixing matrix
+        # a_tilde = np.linalg.inv(w)
+        # a = np.linalg.inv(white_mtx) @ a_tilde
+        # Add mean
+        # s_mean = np.linalg.inv(a) @ x_mean
+        # s += s_mean
     
     return s

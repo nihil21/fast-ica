@@ -17,7 +17,7 @@ Tuple *center(Matrix *x) {
     return CenterData;
 }
 
-Matrix *whitening(Matrix *x, bool center_data) {
+Tuple *whitening(Matrix *x, bool center_data) {
     // 1. Compute covariance matrix
     Matrix *x_cov = covariance(x, center_data);
 
@@ -41,8 +41,9 @@ Matrix *whitening(Matrix *x, bool center_data) {
     free_mat(x_cov);
     free_mat(d);
     free_mat(tmp);
-    free_mat(white_mat);
     free_tuple(eigen, true);
 
-    return x_w;
+    // Pack Xw and whitening matrix into tuple
+    Tuple *WhitenData = new_tuple((Tensor *) x_w, MatType, (Tensor *) white_mat, VecType);
+    return WhitenData;
 }
