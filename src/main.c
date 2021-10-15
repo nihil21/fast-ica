@@ -37,8 +37,23 @@ int main(int argc, char **argv) {
             n_samples = (int) strtol(argv[3], &end, 10);
             assert(n_samples > 0, "The number of samples must be positive.");
         case 3:
-            g_selector = (int) strtol(argv[2], &end, 3);
-            g_function = g_selector == 0 ? LogCosh : (g_selector == 1 ? Exp : Cube);
+            g_selector = (int) strtol(argv[2], &end, 4);
+            switch (g_selector) {
+                case 0:
+                    g_function = LogCosh;
+                    break;
+                case 1:
+                    g_function = Exp;
+                    break;
+                case 2:
+                    g_function = Cube;
+                    break;
+                case 3:
+                    g_function = Abs;
+                    break;
+                default:
+                    assert(false, "Unknown function.");
+            }
         case 2:
             if ((int) strtol(argv[1], &end, 2))
                 strategy = Deflation;
@@ -78,19 +93,18 @@ int main(int argc, char **argv) {
     write_mat("../X.bin", x);
 
     // Perform FastICA
-    Matrix *s_res = fast_ica(x, true, strategy, g_function, threshold, max_iter);
+    Matrix *s_ = fast_ica(x, true, strategy, g_function, threshold, max_iter);
     if (verbose) {
         printf("Restored signals:\n");
-        print_mat(s_res);
+        print_mat(s_);
     }
-
-    write_mat("../S_res.bin", s_res);
+    write_mat("../S_.bin", s_);
 
     // Free memory
     free_mat(s);
     free_mat(a);
     free_mat(x);
-    free_mat(s_res);
+    free_mat(s_);
 
     return 0;
 }

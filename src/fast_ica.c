@@ -2,13 +2,14 @@
 // Created by nihil on 08/10/21.
 //
 
+#include <stdio.h>
 #include "../include/fast_ica.h"
 #include "../include/linalg.h"
 #include "../include/preprocessing.h"
 #include "../include/utils.h"
 
 /*
- * LogCosh function (for matrices)
+ * LogCosh function
  */
 Tuple *logcosh_f(Matrix *x) {
     fp alpha = 1.f;
@@ -28,7 +29,7 @@ Tuple *logcosh_f(Matrix *x) {
 }
 
 /*
- * Exponential function (for matrices)
+ * Exponential function
  */
 Tuple *exp_f(Matrix *x) {
     Matrix *gx = new_mat(x->height, x->width);
@@ -48,7 +49,7 @@ Tuple *exp_f(Matrix *x) {
 }
 
 /*
- * Cube function (for matrices)
+ * Cube function
  */
 Tuple *cube_f(Matrix *x) {
     Matrix *gx = new_mat(x->height, x->width);
@@ -59,6 +60,25 @@ Tuple *cube_f(Matrix *x) {
             fp tmp = MAT_CELL(x, i, j) * MAT_CELL(x, i, j);
             MAT_CELL(gx, i, j) = MAT_CELL(x, i, j) * tmp;
             MAT_CELL(gx_prime, i, j) = 3 * tmp;
+        }
+    }
+
+    // Pack Gx and Gx' into a tuple
+    Tuple *res = new_tuple(gx, gx_prime);
+    return res;
+}
+
+/*
+ * Abs function
+ */
+Tuple *abs_f(Matrix *x) {
+    Matrix *gx = new_mat(x->height, x->width);
+    Matrix *gx_prime = new_mat(x->height, x->width);
+
+    for (int i = 0; i < x->height; i++) {
+        for (int j = 0; j < x->width; j++) {
+            MAT_CELL(gx, i, j) = ABS(MAT_CELL(x, i, j));
+            MAT_CELL(gx_prime, i, j) = (fp) sgn(MAT_CELL(x, i, j));
         }
     }
 
@@ -291,6 +311,9 @@ Matrix *fast_ica(Matrix *x, bool whiten, FastICAStrategy strategy, GFunc g_func,
             break;
         case Cube:
             g = &cube_f;
+            break;
+        case Abs:
+            g = &abs_f;
             break;
         default:
             assert(false, "Unknown function");

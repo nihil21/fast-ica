@@ -14,7 +14,8 @@ typedef enum FastICAStrategy {
 typedef enum GFunc {
     LogCosh,
     Exp,
-    Cube
+    Cube,
+    Abs
 } GFunc;
 
 Matrix *fast_ica(Matrix *x, bool whiten, FastICAStrategy strategy, GFunc g_func, fp threshold, int max_iter);

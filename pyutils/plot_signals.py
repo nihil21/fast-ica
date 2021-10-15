@@ -29,13 +29,10 @@ def read_binary(filename: str, fp: Dict) -> np.ndarray:
     return tensor
 
 
-def plot_signals(s, x, sr) -> None:
-    assert s.shape == x.shape, "Signals and observations should have the same shape"
-    assert x.shape == sr.shape, "Observations and reconstructed signals should have the same shape"
-
+def plot_signals(s, x, s_) -> None:
     plt.figure(figsize=(15, 10))
 
-    models = [x, s, sr]
+    models = [x, s, s_]
     names = [
         "Observations (mixed signal)",
         "True Sources",
@@ -67,11 +64,10 @@ def main():
     else:
         sys.exit("Usage: plot_signals [float|double] (default: float)")
 
-    s_path, x_path, sr_path = "../S.bin", "../X.bin", "../S_res.bin"
-    s = read_binary(s_path, fp)
-    x = read_binary(x_path, fp)
-    sr = read_binary(sr_path, fp)
-    plot_signals(s, x, sr)
+    s = read_binary("../S.bin", fp)
+    x = read_binary("../X.bin", fp)
+    s_ = read_binary("../S_.bin", fp)
+    plot_signals(s, x, s_)
 
 
 if __name__ == "__main__":
