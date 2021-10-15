@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <time.h>
 #include "../include/utils.h"
-#include "../include/vector.h"
 #include "../include/matrix.h"
 #include "../include/signal.h"
 #include "../include/fast_ica.h"
@@ -46,7 +45,7 @@ int main(int argc, char **argv) {
         case 1:
             break;
         default:
-            printf("Usage: fast_ica [STRATEGY [G_FUNCTION [N_SAMPLES [SAMPLING_WINDOW_SIZE [THRESHOLD [ MAX_ITER [VERBOSE]]]]]]");
+            printf("Usage: fast_ica [STRATEGY [G_FUNCTION [N_SAMPLES [SAMPLING_WINDOW_SIZE [THRESHOLD [ MAX_ITER [ADD_NOISE [VERBOSE]]]]]]]");
             exit(-1);
     }
     srand48(time(NULL));  // set seed
@@ -55,37 +54,37 @@ int main(int argc, char **argv) {
     Matrix *s = generate_signals(n_samples, sampling_window_size, add_noise);
     if (verbose) {
         printf("Original signals:\n");
-        mat_print(s);
+        print_mat(s);
     }
 
-    mat_write("../S.bin", s);
+    write_mat("../S.bin", s);
 
     // Create mixing matrix A (n_components, n_components)
     fp a_data[] = {1, 1, 1, 0.5f, 2, 1, 1.5f, 1, 2};
-    Matrix *a = mat_from_array(a_data, 3, 3);
+    Matrix *a = from_array(a_data, 3, 3);
     if (verbose) {
         printf("Mixing matrix:\n");
-        mat_print(a);
+        print_mat(a);
     }
 
     // Create observation X by mixing signal S with matrix A (n_components, n_samples)
     Matrix *x = mat_mul(a, s);
     if (verbose) {
         printf("Observations (mixed signals):\n");
-        mat_print(x);
+        print_mat(x);
         printf("\n");
     }
 
-    mat_write("../X.bin", x);
+    write_mat("../X.bin", x);
 
     // Perform FastICA
     Matrix *s_res = fast_ica(x, true, strategy, g_function, threshold, max_iter);
     if (verbose) {
         printf("Restored signals:\n");
-        mat_print(s_res);
+        print_mat(s_res);
     }
 
-    mat_write("../S_res.bin", s_res);
+    write_mat("../S_res.bin", s_res);
 
     // Free memory
     free_mat(s);

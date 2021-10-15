@@ -35,7 +35,6 @@ def plot_signals(s, x, sr) -> None:
 
     plt.figure(figsize=(15, 10))
 
-    n_comp = s.shape[0]
     models = [x, s, sr]
     names = [
         "Observations (mixed signal)",

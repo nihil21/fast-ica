@@ -10,10 +10,10 @@
  */
 Tuple *center(Matrix *x) {
     // Compute mean and subtract it from the original data to center them
-    Vector *x_mean = col_mean(x);
-    Matrix *x_c = col_sub(x, x_mean);
+    Matrix *x_mean = col_mean(x);
+    Matrix *x_c = sub_col(x, x_mean);
     // Pack Xc and Xm into tuple
-    Tuple *CenterData = new_tuple((Tensor *) x_c, MatType, (Tensor *) x_mean, VecType);
+    Tuple *CenterData = new_tuple(x_c, x_mean);
     return CenterData;
 }
 
@@ -23,12 +23,12 @@ Tuple *whitening(Matrix *x, bool center_data) {
 
     // 2. Compute eigenvalues and eigenvectors
     Tuple *eigen = solve_eig(x_cov);
-    Vector *eig_vals = (Vector *) eigen->tensor1;
-    Matrix *eig_vecs = (Matrix *) eigen->tensor2;
-    int n = eig_vals->length;
+    Matrix *eig_vals = eigen->m1;  // column vector
+    Matrix *eig_vecs = eigen->m2;
+    int n = eig_vals->height;
     Matrix *d = new_mat(n, n);
     for (int i = 0; i < n; i++)
-        MAT_CELL(d, i, i) = 1 / SQRT(VEC_CELL(eig_vals, i));
+        MAT_CELL(d, i, i) = 1 / SQRT(MAT_CELL(eig_vals, i, 0));
 
     // 3. Compute whitening matrix
     Matrix *tmp = mat_mul_trans2(d, eig_vecs);
@@ -44,6 +44,6 @@ Tuple *whitening(Matrix *x, bool center_data) {
     free_tuple(eigen, true);
 
     // Pack Xw and whitening matrix into tuple
-    Tuple *WhitenData = new_tuple((Tensor *) x_w, MatType, (Tensor *) white_mat, VecType);
+    Tuple *WhitenData = new_tuple(x_w, white_mat);
     return WhitenData;
 }

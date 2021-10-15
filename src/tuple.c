@@ -7,17 +7,16 @@
 #include "../include/utils.h"
 
 /*
- * Creates a tuple from a pair of tensors (and related type, namely matrix or vector)
+ * Creates a tuple from a pair of matrices
  */
-Tuple *new_tuple(Tensor *tensor1, TensorType type1, Tensor *tensor2, TensorType type2) {
+Tuple *new_tuple(Matrix *m1, Matrix *m2) {
     Tuple *tuple;
     tuple = malloc(sizeof(Tuple));
     assert(tuple != NULL, "Could not allocate tuple.");
 
-    tuple->tensor1 = tensor1;
-    tuple->type1 = type1;
-    tuple->tensor2 = tensor2;
-    tuple->type2 = type2;
+    // Set fields
+    tuple->m1 = m1;
+    tuple->m2 = m2;
 
     return tuple;
 }
@@ -27,29 +26,15 @@ Tuple *new_tuple(Tensor *tensor1, TensorType type1, Tensor *tensor2, TensorType 
  */
 void free_tuple(Tuple *tuple, bool free_members) {
     if (tuple != NULL) {
-        // Optionally free Tensor members
+        // Optionally free Matrix members
         if (free_members) {
-            // Free first tensor
-            if (tuple->tensor1 != NULL) {
-                switch (tuple->type1) {
-                    case VecType:
-                        free_vec((Vector *) tuple->tensor1);
-                        break;
-                    case MatType:
-                        free_mat((Matrix *) tuple->tensor1);
-                        break;
-                }
+            // Free first matrix
+            if (tuple->m1 != NULL) {
+                free_mat(tuple->m1);
             }
-            // Free second tensor
-            if (tuple->tensor2 != NULL) {
-                switch (tuple->type2) {
-                    case VecType:
-                        free_vec((Vector *) tuple->tensor2);
-                        break;
-                    case MatType:
-                        free_mat((Matrix *) tuple->tensor2);
-                        break;
-                }
+            // Free second matrix
+            if (tuple->m2 != NULL) {
+                free_mat(tuple->m2);
             }
         }
 

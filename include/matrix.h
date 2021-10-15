@@ -7,7 +7,6 @@
 
 #include <stdbool.h>
 #include "fp.h"
-#include "vector.h"
 
 /*
  * Data type declaration and macros
@@ -25,6 +24,7 @@ typedef struct Matrix {
  * Initialize and free
  */
 Matrix *new_mat(int height, int width);
+Matrix *new_vec(int length);  // column vector
 void free_mat(Matrix *m);
 
 /*
@@ -34,68 +34,75 @@ Matrix *eye(int n);
 Matrix *mat_randint(int height, int width, int amin, int amax);
 Matrix *mat_rand(int height, int width, fp min, fp max);
 Matrix *mat_randn(int height, int width);
+Matrix *linspace(fp start, fp stop, int n_samples);
 
 /*
  * Basic self-operations (the trailing underscore means that the operation is performed in-place)
  */
-fp mat_norm(Matrix *m);
-fp mat_mean(Matrix *m);
-Vector *row_mean(Matrix *m);
-Vector *col_mean(Matrix *m);
+fp norm(Matrix *m);
+fp mean(Matrix *m);
+Matrix *row_mean(Matrix *m);
+Matrix *col_mean(Matrix *m);
 Matrix *transpose(Matrix *m);
-Matrix *mat_scale(Matrix *m, fp scalar);
-void mat_scale_(Matrix **m, fp scalar);
+Matrix *scale(Matrix *m, fp scalar);
+void scale_(Matrix **m, fp scalar);
 
 /*
  * Basic operations between two matrices (the trailing underscore means that the operation is performed in-place)
  */
-Matrix *mat_add(Matrix *m1, Matrix *m2);
-void mat_add_(Matrix **m1, Matrix *m2);
-Matrix *mat_sub(Matrix *m1, Matrix *m2);
-void mat_sub_(Matrix **m1, Matrix *m2);
-Matrix *mat_scalar_add(Matrix *m, fp scalar);
-void mat_scalar_add_(Matrix **m, fp scalar);
-Matrix *mat_hadamard(Matrix *m1, Matrix *m2);
-void mat_hadamard_(Matrix **m1, Matrix *m2);
+Matrix *add_mat(Matrix *m1, Matrix *m2);
+void add_mat_(Matrix **m1, Matrix *m2);
+Matrix *add_row(Matrix *m, Matrix *r);
+void add_row_(Matrix **m, Matrix *r);
+Matrix *add_col(Matrix *m, Matrix *c);
+void add_col_(Matrix **m, Matrix *c);
+Matrix *sub_mat(Matrix *m1, Matrix *m2);
+void sub_mat_(Matrix **m1, Matrix *m2);
+Matrix *sub_row(Matrix *m, Matrix *r);
+void sub_row_(Matrix **m, Matrix *r);
+Matrix *sub_col(Matrix *m, Matrix *c);
+void sub_col_(Matrix **m, Matrix *c);
+Matrix *add_scalar(Matrix *m, fp scalar);
+void add_scalar_(Matrix **m, fp scalar);
+Matrix *hadamard(Matrix *m1, Matrix *m2);
+void hadamard_(Matrix **m1, Matrix *m2);
+Matrix *hadamard_row(Matrix *m, Matrix *r);
+void hadamard_row_(Matrix **m, Matrix *r);
+Matrix *hadamard_col(Matrix *m, Matrix *c);
+void hadamard_col_(Matrix **m, Matrix *c);
 Matrix *mat_mul(Matrix *m1, Matrix *m2);
 Matrix *mat_mul_trans1(Matrix* m1, Matrix* m2);
 Matrix *mat_mul_trans2(Matrix* m1, Matrix* m2);
+fp dot(Matrix *v1, Matrix *v2);
+Matrix *outer(Matrix *v1, Matrix *v2);
 
 /*
  * Boolean operations
  */
+bool is_vector(Matrix *m);
+bool is_row_vector(Matrix *m);
+bool is_col_vector(Matrix *m);
+bool are_equal(Matrix *m1, Matrix *m2, fp tol);
 bool is_square(Matrix *m);
 
 /*
- * Matrix and vector manipulation and operations
+ * Matrix manipulation
  */
-Vector *diagonal(Matrix *m);
+Matrix *diagonal(Matrix *m);
+void tri_up(Matrix **m);
 Matrix *read_slice(Matrix *m, int row_start, int row_stop, int col_start, int col_stop);
 void write_slice(Matrix **m1, Matrix *m2, int row_start, int col_start);
-Vector *mat_to_vec(Matrix *m, bool free_struct);
-Matrix *vec_to_mat(Vector *v, bool free_struct);
-Vector *extract_row(Matrix *m, int k);
-Vector *extract_col(Matrix *m, int k);
-void paste_row(Matrix **m, Vector *r, int k);
-void paste_col(Matrix **m, Vector *c, int k);
-Matrix *row_add(Matrix *m, Vector *v);
-void row_add_(Matrix **m, Vector *v);
-Matrix *col_add(Matrix *m, Vector *v);
-void col_add_(Matrix **m, Vector *v);
-Matrix *row_sub(Matrix *m, Vector *v);
-void row_sub_(Matrix **m, Vector *v);
-Matrix *col_sub(Matrix *m, Vector *v);
-void col_sub_(Matrix **m, Vector *v);
-Vector *mat_vec_mul(Matrix *m, Vector *v);
-Vector *mat_vec_mul_trans(Matrix *m, Vector *v);
-Matrix *outer(Vector *v1, Vector *v2);
+Matrix *extract_row(Matrix *m, int k);
+Matrix *extract_col(Matrix *m, int k);
+void paste_row(Matrix **m, Matrix *r, int k);
+void paste_col(Matrix **m, Matrix *c, int k);
 
 /*
  * Utils
  */
-void mat_print(Matrix *m);
-void mat_write(const char *path, Matrix *m);
-Matrix *mat_from_array(const fp *data, int height, int width);
-Matrix *mat_copy(Matrix *m);
+void print_mat(Matrix *m);
+void write_mat(const char *path, Matrix *m);
+Matrix *from_array(const fp *data, int height, int width);
+Matrix *copy_mat(Matrix *m);
 
 #endif //FAST_ICA_MATRIX_H

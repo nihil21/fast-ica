@@ -8,8 +8,8 @@
 #include "../include/matrix.h"
 
 typedef enum FastICAStrategy {
-    Deflation,
-    Parallel
+    Parallel,
+    Deflation
 } FastICAStrategy;
 typedef enum GFunc {
     LogCosh,
