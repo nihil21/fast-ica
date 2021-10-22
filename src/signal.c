@@ -2,7 +2,6 @@
 // Created by nihil on 03/10/21.
 //
 
-#include <math.h>
 #include "../include/signal.h"
 #include "../include/utils.h"
 

@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include "../include/linalg.h"
 #include "../include/utils.h"
+#include "../include/random.h"
 
 /*
  * Compute a Householder reflection for a given real vector
@@ -176,7 +177,7 @@ Matrix *solve_eig_vals(Matrix *m, fp tol, int max_iter) {
  */
 Matrix *inv_iter(fp eig_val, Matrix *m, fp tol, int max_iter) {
     // Perturb lambda to prevent the computed matrix from becoming singular
-    fp lambda = eig_val + (fp) drand48() * 1e-6f;
+    fp lambda = eig_val + uniform_rand() * 1e-6f;
     // Compute M' = M - lambda * I
     Matrix *lambda_i = eye(m->height);
     scale_(&lambda_i, lambda);

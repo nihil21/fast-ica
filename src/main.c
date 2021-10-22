@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include "../include/utils.h"
 #include "../include/random.h"
 #include "../include/matrix.h"
