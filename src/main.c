@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "../include/utils.h"
+#include "../include/random.h"
 #include "../include/matrix.h"
 #include "../include/signal.h"
 #include "../include/fast_ica.h"
@@ -63,7 +64,7 @@ int main(int argc, char **argv) {
             printf("Usage: fast_ica [STRATEGY [G_FUNCTION [N_SAMPLES [SAMPLING_WINDOW_SIZE [THRESHOLD [ MAX_ITER [ADD_NOISE [VERBOSE]]]]]]]");
             exit(-1);
     }
-    srand48(time(NULL));  // set seed
+    set_prng_seed(42);  // set seed
 
     // Create matrix S of original signals (n_components, n_samples)
     Matrix *s = generate_signals(n_samples, sampling_window_size, add_noise);

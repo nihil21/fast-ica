@@ -2,11 +2,11 @@
 // Created by nihil on 20/09/21.
 //
 
-#include <stdlib.h>
 #include <malloc.h>
 #include <string.h>
 #include "../include/matrix.h"
 #include "../include/utils.h"
+#include "../include/random.h"
 
 /*
  * Initialize a zero matrix given its dimensions
@@ -62,12 +62,12 @@ Matrix *eye(int n) {
 /*
  * Allocate a matrix with the given dimensions and fill it with random uniform integers in a given range
  */
-Matrix *mat_randint(int height, int width, int amin, int amax) {
+Matrix *mat_randint(int height, int width, int min, int max) {
     Matrix *m = new_mat(height, width);
 
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
-            MAT_CELL(m, i, j) = (fp) (lrand48() % (amax + 1 - amin) + amin);
+            MAT_CELL(m, i, j) = (fp) uniform_randint_range(min, max);
         }
     }
 
@@ -82,7 +82,7 @@ Matrix *mat_rand(int height, int width, fp min, fp max) {
 
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
-            MAT_CELL(m, i, j) = (fp) drand48() * (max + min) - min;
+            MAT_CELL(m, i, j) = uniform_rand_range(min, max);
         }
     }
 
@@ -97,7 +97,7 @@ Matrix *mat_randn(int height, int width) {
 
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
-            MAT_CELL(m, i, j) = gen_normal();
+            MAT_CELL(m, i, j) = standard_rand();
         }
     }
 

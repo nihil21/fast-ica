@@ -2,7 +2,6 @@
 // Created by nihil on 08/10/21.
 //
 
-#include <stdio.h>
 #include "../include/fast_ica.h"
 #include "../include/linalg.h"
 #include "../include/preprocessing.h"

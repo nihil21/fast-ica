@@ -9,7 +9,6 @@
 #include "../include/fp.h"
 
 void assert(bool condition, char *message);
-fp gen_normal();
 int sgn(fp x);
 
 #endif //FAST_ICA_UTILS_H

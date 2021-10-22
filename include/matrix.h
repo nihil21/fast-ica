@@ -31,7 +31,7 @@ void free_mat(Matrix *m);
  * Predefined matrices
  */
 Matrix *eye(int n);
-Matrix *mat_randint(int height, int width, int amin, int amax);
+Matrix *mat_randint(int height, int width, int min, int max);
 Matrix *mat_rand(int height, int width, fp min, fp max);
 Matrix *mat_randn(int height, int width);
 Matrix *linspace(fp start, fp stop, int n_samples);
