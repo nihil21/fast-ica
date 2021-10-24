@@ -38,15 +38,13 @@ def plot_signals(s, x, s_) -> None:
         "True Sources",
         "ICA recovered signals",
     ]
-    colors = ["red", "steelblue", "orange"]
     plots = len(models)
 
     for ii, (model, name) in enumerate(zip(models, names)):
         plt.subplot(plots, 1, ii + 1)
         plt.title(name)
-        plt.plot(model[0], color=colors[0])
-        plt.plot(model[1], color=colors[1])
-        plt.plot(model[2], color=colors[2])
+        for sig in model:
+            plt.plot(sig)
         plt.grid()
 
     plt.tight_layout()

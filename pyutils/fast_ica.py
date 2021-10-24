@@ -11,16 +11,21 @@ def centering(x: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     return xc, mean
 
 
-def whitening(x: np.ndarray) -> np.ndarray:
+def whitening(x: np.ndarray, n_components: int) -> np.ndarray:
     # Compute covariance matrix of data
     cov_mtx = np.cov(x)
 
     # Compute eigenvectors and eigenvalues
     eig_vals, eig_vecs = np.linalg.eigh(cov_mtx)
-    d = np.diag(1.0 / np.sqrt(eig_vals))  # construct diagonal matrix of eigenvalues
+    # Sort them
+    idx = eig_vals.argsort()[::-1]
+    eig_vals = eig_vals[idx]
+    eig_vecs = eig_vecs[:, idx]
+    # Construct diagonal matrix of eigenvalues
+    d = np.diag(1.0 / np.sqrt(eig_vals))
 
     # Compute whitening matrix
-    white_mtx = eig_vecs @ d @ eig_vecs.T
+    white_mtx = (d @ eig_vecs.T)[:n_components]
 
     # White data
     xw = white_mtx @ x
@@ -149,16 +154,24 @@ def _cube(x: np.ndarray):
 
 def fast_ica(
     x: np.ndarray,
+    n_components: Optional[int] = None,
     whiten: bool = True,
     strategy: str = "parallel",
     g_func: str = "logcosh",
     threshold: float = 1e-4,
     max_iter: int = 5000
 ):
+    n_features, n_samples = x.shape
+    
     # Center and whiten, if required
     if whiten:
+        # Compute number of components
+        max_comp = min(n_features, n_samples)
+        if n_components is None or n_components > max_comp:
+            n_components = max_comp
+        
         xw, x_mean = centering(x)
-        xw, white_mtx = whitening(xw)
+        xw, white_mtx = whitening(xw, n_components)
     else:
         xw = x.copy()
 

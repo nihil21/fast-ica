@@ -2,8 +2,10 @@
 // Created by nihil on 02/10/21.
 //
 
+#include <malloc.h>
 #include "../include/preprocessing.h"
 #include "../include/linalg.h"
+#include "../include/sorting.h"
 
 /*
  * Given a (n_features, n_samples) matrix, compute its mean along columns and center the matrix
@@ -17,7 +19,42 @@ Tuple *center(Matrix *x) {
     return CenterData;
 }
 
-Tuple *whitening(Matrix *x, bool center_data) {
+void eigen_sort(Matrix *eig_vals, Matrix *eig_vecs) {
+    int n_eig = eig_vals->height;
+    // Create an array of Data
+    Data *eig_vals_array = malloc(n_eig * sizeof(Data));
+    for (int i = 0; i < n_eig; i++) {
+        Data d = {i, MAT_CELL(eig_vals, i, 0)};
+        eig_vals_array[i] = d;
+    }
+    // Sort eigenvalues in descending order
+    quick_sort(eig_vals_array, n_eig, true);
+
+    // Copy sorted values to eig_vals and obtain list of sorted indexes
+    int *sort_idx = malloc(n_eig * sizeof(int));
+    for (int i = 0; i < n_eig; i++) {
+        Data d = eig_vals_array[i];
+        sort_idx[i] = d.index;
+        MAT_CELL(eig_vals, i, 0) = d.value;
+    }
+
+    // Reorder eig_vecs according to sort_idx
+    Matrix *eig_vecs_copy = copy_mat(eig_vecs);
+    for (int i = 0; i < n_eig; i++) {
+        int idx = sort_idx[i];
+        Matrix *eig_vec = extract_col(eig_vecs_copy, idx);
+        write_slice(&eig_vecs, eig_vec, 0, i);
+
+        free_mat(eig_vec);
+    }
+
+    // Free memory
+    free(sort_idx);
+    free(eig_vals_array);
+    free_mat(eig_vecs_copy);
+}
+
+Tuple *whitening(Matrix *x, bool center_data, int n_components) {
     // 1. Compute covariance matrix
     Matrix *x_cov = covariance(x, center_data);
 
@@ -25,6 +62,10 @@ Tuple *whitening(Matrix *x, bool center_data) {
     Tuple *eigen = solve_eig(x_cov);
     Matrix *eig_vals = eigen->m1;  // column vector
     Matrix *eig_vecs = eigen->m2;
+
+    // Sort eigenvalues and eigenvectors
+    eigen_sort(eig_vals, eig_vecs);
+
     int n = eig_vals->height;
     Matrix *d = new_mat(n, n);
     for (int i = 0; i < n; i++)
@@ -32,7 +73,7 @@ Tuple *whitening(Matrix *x, bool center_data) {
 
     // 3. Compute whitening matrix
     Matrix *tmp = mat_mul_trans2(d, eig_vecs);
-    Matrix *white_mat = mat_mul(eig_vecs, tmp);
+    Matrix *white_mat = read_slice(tmp, 0, n_components - 1, 0, tmp->width - 1);
 
     // 4. Whiten data
     Matrix *x_w = mat_mul(white_mat, x);

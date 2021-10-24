@@ -75,8 +75,8 @@ int main(int argc, char **argv) {
     write_mat("../S.bin", s);
 
     // Create mixing matrix A (n_components, n_components)
-    fp a_data[] = {1, 1, 1, 0.5f, 2, 1, 1.5f, 1, 2};
-    Matrix *a = from_array(a_data, 3, 3);
+    fp a_data[] = {1, 1, 1, 0.5f, 2, 1, 1.5f, 1, 2, 2, 1, 1.7f};
+    Matrix *a = from_array(a_data, 4, 3);
     if (verbose) {
         printf("Mixing matrix:\n");
         print_mat(a);
@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
     write_mat("../X.bin", x);
 
     // Perform FastICA
-    Matrix *s_ = fast_ica(x, true, strategy, g_function, threshold, max_iter);
+    Matrix *s_ = fast_ica(x, 3, true, strategy, g_function, threshold, max_iter);
     if (verbose) {
         printf("Restored signals:\n");
         print_mat(s_);

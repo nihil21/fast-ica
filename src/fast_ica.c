@@ -275,19 +275,26 @@ Matrix *ica_par(Matrix *x_w, Tuple *(*g_func)(Matrix *), fp threshold, int max_i
 /*
  * Perform FastICA on a (n_features, n_samples) matrix of observations
  */
-Matrix *fast_ica(Matrix *x, bool whiten, FastICAStrategy strategy, GFunc g_func, fp threshold, int max_iter) {
+Matrix *fast_ica(Matrix *x, int n_components, bool whiten, FastICAStrategy strategy, GFunc g_func, fp threshold, int max_iter) {
+    int n_features = x->height;
+    int n_samples = x->width;
+
     // Center and whiten, if specified
     Matrix *x_w;
     Matrix *white_mtx;
     Matrix *x_mean;
     if (whiten) {
+        int max_comp = n_features > n_samples ? n_features : n_samples;
+        if (n_components > max_comp)
+            n_components = max_comp;
+
         // Center
         Tuple *CenterData = center(x);
         Matrix *x_c = CenterData->m1;
         x_mean = CenterData->m2;
 
         // Whiten
-        Tuple *WhitenData = whitening(x_c, false);
+        Tuple *WhitenData = whitening(x_c, false, n_components);
         x_w = WhitenData->m1;
         white_mtx = WhitenData->m2;
 
