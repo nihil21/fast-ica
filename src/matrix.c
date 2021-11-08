@@ -745,6 +745,7 @@ void write_slice(Matrix **m1, Matrix *m2, int row_start, int col_start) {
         }
     }
 }
+
 /*
  * Extract the k-th row, creating a new vector
  */

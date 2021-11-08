@@ -22,7 +22,8 @@ def whitening(x: np.ndarray, n_components: int) -> np.ndarray:
     eig_vals = eig_vals[idx]
     eig_vecs = eig_vecs[:, idx]
     # Construct diagonal matrix of eigenvalues
-    d = np.diag(1.0 / np.sqrt(eig_vals))
+    eps = 1e-10
+    d = np.diag(1.0 / np.sqrt(eig_vals + eps))
 
     # Compute whitening matrix
     white_mtx = (d @ eig_vecs.T)[:n_components]
@@ -41,7 +42,9 @@ def _gram_schmidt_decorrelation(w_i_new: np.ndarray, w: np.ndarray, i: int) -> n
 def _symmetric_decorrelation(w: np.ndarray) -> np.ndarray:
     # Compute eigenvectors and eigenvalues
     eig_vals, eig_vecs = np.linalg.eigh(np.dot(w, w.T))
-    d = np.diag(1.0 / np.sqrt(eig_vals))  # construct diagonal matrix of eigenvalues
+    # Construct diagonal matrix of eigenvalues
+    eps = 1e-10
+    d = np.diag(1.0 / np.sqrt(eig_vals + eps))
 
     # Compute new weight matrix
     w = eig_vecs @ d @ eig_vecs.T @ w
@@ -49,11 +52,11 @@ def _symmetric_decorrelation(w: np.ndarray) -> np.ndarray:
     return w
 
 
-def _ica_def(xw, g, threshold, max_iter):
+def _ica_def(xw, n_components, g, threshold, max_iter):
     n_units, n_samples = xw.shape
 
     # Initialize weights randomly
-    w = np.random.randn(n_units, n_units)
+    w = np.random.randn(n_components, n_units)
 
     # Iterate over units
     for i in range(n_units):
@@ -91,14 +94,15 @@ def _ica_def(xw, g, threshold, max_iter):
     return w
 
 
-def _ica_par(xw, g, threshold, max_iter):
+def _ica_par(xw, n_components, g, threshold, max_iter):
     n_units, n_samples = xw.shape
 
     # Initialize weights randomly and decorrelate
-    w = np.array([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9]])  # np.random.randn(n_units, n_units)
+    w = np.random.randn(n_components, n_units)
     w = _symmetric_decorrelation(w)
     
     for _ in range(max_iter):
+        # print(w.shape, xw.shape)
         # (n_units, n_units) @ (n_units, n_samples) -> (n_units, n_samples)
         ws = w @ xw
         g_ws, g_ws_prime = g(ws)
@@ -188,6 +192,7 @@ def fast_ica(
         "parallel": _ica_par
     }
     kwargs = {
+        "n_components": n_components,
         "g": g_dict[g_func],
         "threshold": threshold,
         "max_iter": max_iter,
