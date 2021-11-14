@@ -3,12 +3,22 @@
 //
 
 #include "../include/sorting.h"
+#include <malloc.h>
 
 /*
  * Swap two elements
  */
-void swap(Data *a, Data *b){
-    Data tmp = *a;
+void swap(fp *a, fp *b){
+    fp tmp = *a;
+    *a = *b;
+    *b = tmp;
+}
+
+/*
+ * Swap two indexes
+ */
+void swap_i(int *a, int *b){
+    int tmp = *a;
     *a = *b;
     *b = tmp;
 }
@@ -16,10 +26,10 @@ void swap(Data *a, Data *b){
 /*
  * Compare two elements
  */
-int compare(Data a, Data b){
-    if (a.value > b.value)
+int compare(fp a, fp b){
+    if (a > b)
         return 1;
-    else if (a.value == b.value)
+    else if (a == b)
         return 0;
 
     return -1;
@@ -28,9 +38,9 @@ int compare(Data a, Data b){
 /*
  * Recursive sub-routine of QuickSort
  */
-void quick_sort_rec(Data v[], int start, int end, int desc_fact){
+void quick_sort_rec(fp v[], int *sort_id, int start, int end, int desc_fact){
     int i, j, i_pivot;
-    Data pivot;
+    fp pivot;
 
     if(start < end) {
         i = start;
@@ -43,26 +53,35 @@ void quick_sort_rec(Data v[], int start, int end, int desc_fact){
                 i++;
             while (j > i && desc_fact * compare(v[j], pivot) >= 0)
                 j--;
-            if (i < j)
+            if (i < j) {
                 swap(&(v[i]), &(v[j]));
+                swap_i(&(sort_id[i]), &(sort_id[j]));
+            }
         } while (i < j);
 
         if (i != i_pivot && desc_fact * compare(v[i], v[i_pivot])) {
             swap(&(v[i]), &(v[i_pivot]));
+            swap_i(&(sort_id[i]), &(sort_id[i_pivot]));
             i_pivot = i;
         }
 
         if (start < i_pivot - 1)
-            quick_sort_rec(v, start, i_pivot - 1, desc_fact);
+            quick_sort_rec(v, sort_id, start, i_pivot - 1, desc_fact);
         if (i_pivot + 1 < end)
-            quick_sort_rec(v, i_pivot + 1, end, desc_fact);
+            quick_sort_rec(v, sort_id, i_pivot + 1, end, desc_fact);
     }
 }
 
 /*
- * QuickSort implementation
+ * QuickSort implementation (it returns also the list of sorted indexes)
  */
-void quick_sort(Data v[], int len, bool desc) {
+int *quick_sort(fp v[], int len, bool desc) {
     int desc_fact = desc ? -1 : 1;
-    quick_sort_rec(v, 0, len - 1, desc_fact);
+    // Create array of indexes
+    int *sort_id = malloc(len * sizeof(int));
+    for (int i = 0; i < len; i++)
+        sort_id[i] = i;
+
+    quick_sort_rec(v, sort_id, 0, len - 1, desc_fact);
+    return sort_id;
 }

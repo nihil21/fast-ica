@@ -8,11 +8,6 @@
 #include <stdbool.h>
 #include "fp.h"
 
-typedef struct Data {
-    int index;
-    fp value;
-} Data;
-
-void quick_sort(Data v[], int len, bool desc);
+int *quick_sort(fp v[], int len, bool desc);
 
 #endif //FAST_ICA_SORTING_H

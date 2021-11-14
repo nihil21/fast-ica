@@ -21,22 +21,8 @@ Tuple *center(Matrix *x) {
 
 void eigen_sort(Matrix *eig_vals, Matrix *eig_vecs) {
     int n_eig = eig_vals->height;
-    // Create an array of Data
-    Data *eig_vals_array = malloc(n_eig * sizeof(Data));
-    for (int i = 0; i < n_eig; i++) {
-        Data d = {i, MAT_CELL(eig_vals, i, 0)};
-        eig_vals_array[i] = d;
-    }
     // Sort eigenvalues in descending order
-    quick_sort(eig_vals_array, n_eig, true);
-
-    // Copy sorted values to eig_vals and obtain list of sorted indexes
-    int *sort_idx = malloc(n_eig * sizeof(int));
-    for (int i = 0; i < n_eig; i++) {
-        Data d = eig_vals_array[i];
-        sort_idx[i] = d.index;
-        MAT_CELL(eig_vals, i, 0) = d.value;
-    }
+    int* sort_idx = quick_sort(eig_vals->data, n_eig, true);
 
     // Reorder eig_vecs according to sort_idx
     Matrix *eig_vecs_copy = copy_mat(eig_vecs);
@@ -50,7 +36,6 @@ void eigen_sort(Matrix *eig_vals, Matrix *eig_vecs) {
 
     // Free memory
     free(sort_idx);
-    free(eig_vals_array);
     free_mat(eig_vecs_copy);
 }
 

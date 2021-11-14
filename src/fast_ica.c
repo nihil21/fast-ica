@@ -93,12 +93,10 @@ void gram_schmidt_decorrelation(Matrix **w_i_new, Matrix *w, int i) {
     if (i > 0) {
         Matrix *w_slice = read_slice(w, 0, i - 1, 0, w->width - 1);
         Matrix *tmp_mat = mat_mul_trans1(w_slice, w_slice);
-        Matrix *tmp_vec = mat_mul(*w_i_new, tmp_mat);
-        sub_mat_(w_i_new, tmp_vec);
-
-        // Free memory
         free_mat(w_slice);
+        Matrix *tmp_vec = mat_mul(*w_i_new, tmp_mat);
         free_mat(tmp_mat);
+        sub_mat_(w_i_new, tmp_vec);
         free_mat(tmp_vec);
     }
 }
@@ -110,6 +108,7 @@ void symmetric_decorrelation(Matrix **w) {
     Matrix *w_wt = mat_mul_trans2(*w, *w);
     // Compute eigenvalues and eigenvectors
     Tuple *eigen = solve_eig(w_wt);
+    free_mat(w_wt);
     Matrix *eig_vals = eigen->m1;  // column vector
     Matrix *eig_vecs = eigen->m2;
     int n = eig_vals->height;
@@ -119,15 +118,13 @@ void symmetric_decorrelation(Matrix **w) {
     // Compute new weight matrix
     Matrix *tmp1 = mat_mul_trans1(eig_vecs, *w);
     Matrix *tmp2 = mat_mul(d, tmp1);
-    free_mat(*w);
-    *w = mat_mul(eig_vecs, tmp2);
-
-    // Free memory
-    free_mat(w_wt);
     free_mat(d);
     free_mat(tmp1);
-    free_mat(tmp2);
+
+    free_mat(*w);
+    *w = mat_mul(eig_vecs, tmp2);
     free_tuple(eigen, true);
+    free_mat(tmp2);
 }
 
 /*
@@ -150,6 +147,7 @@ Matrix *ica_def(Matrix *x_w, Tuple *(*g_func)(Matrix *), fp threshold, int max_i
             Matrix *ws = mat_mul(w_k, x_w);
             // Compute G_Ws and G_Ws'
             Tuple *res = g_func(ws);
+            free_mat(ws);
             Matrix *g_ws = res->m1;  // (1, n_samples)
             Matrix *gw_s_prime = res->m2;  // (1, n_samples)
 
@@ -158,9 +156,12 @@ Matrix *ica_def(Matrix *x_w, Tuple *(*g_func)(Matrix *), fp threshold, int max_i
             scale_(&a, 1 / (fp) n_samples);
             // (1, n_units) * E[(1, n_samples)] -> (1, n_units)
             Matrix *b = scale(w_k, mean(gw_s_prime));
+            free_tuple(res, true);
 
             // Compute new weight
             Matrix *w_k_new = sub_mat(a, b);  // (1, n_units)
+            free_mat(a);
+            free_mat(b);
             // Decorrelate
             gram_schmidt_decorrelation(&w_k_new, w, k);
             // Normalize
@@ -172,12 +173,6 @@ Matrix *ica_def(Matrix *x_w, Tuple *(*g_func)(Matrix *), fp threshold, int max_i
             // Update weight
             free_mat(w_k);
             w_k = w_k_new;
-
-            // Free memory
-            free_mat(ws);
-            free_mat(a);
-            free_mat(b);
-            free_tuple(res, true);
 
             if (distance < threshold)
                 break;
@@ -206,6 +201,7 @@ Matrix *ica_par(Matrix *x_w, Tuple *(*g_func)(Matrix *), fp threshold, int max_i
         Matrix *ws = mat_mul(w, x_w);
         // Compute G_Ws and G_Ws'
         Tuple *res = g_func(ws);
+        free_mat(ws);
         Matrix *g_ws = res->m1;  // (n_units, n_samples)
         Matrix *g_ws_prime = res->m2;  // (n_units, n_samples)
 
@@ -218,6 +214,7 @@ Matrix *ica_par(Matrix *x_w, Tuple *(*g_func)(Matrix *), fp threshold, int max_i
             // (1, n_samples) @ (n_units, n_samples).T -> (1, n_samples) @ (n_samples, n_units) -> (1, n_units)
             Matrix *a_k = mat_mul_trans2(g_ws_k, x_w);
             scale_(&a_k, 1 / (fp) n_samples);
+            free_mat(g_ws_k);
 
             // Extract k-th row from G_Ws'
             Matrix *g_ws_prime_k = extract_row(g_ws_prime, k);  // row vector
@@ -225,21 +222,21 @@ Matrix *ica_par(Matrix *x_w, Tuple *(*g_func)(Matrix *), fp threshold, int max_i
             Matrix *w_k = extract_row(w, k);  // row vector
             // (1, n_units) * E[(1, n_samples)] -> (1, n_units)
             Matrix *b_k = scale(w_k, mean(g_ws_prime_k));
+            free_mat(g_ws_prime_k);
+            free_mat(w_k);
 
             // Paste rows
             paste_row(&a, a_k, k);
             paste_row(&b, b_k, k);
-
-            // Free memory
             free_mat(a_k);
             free_mat(b_k);
-            free_mat(w_k);
-            free_mat(g_ws_k);
-            free_mat(g_ws_prime_k);
         }
+        free_tuple(res, true);
 
         // Compute new weight
         Matrix *w_new = sub_mat(a, b);
+        free_mat(a);
+        free_mat(b);
         // Decorrelate
         symmetric_decorrelation(&w_new);
 
@@ -247,23 +244,18 @@ Matrix *ica_par(Matrix *x_w, Tuple *(*g_func)(Matrix *), fp threshold, int max_i
         fp distance = 0;
         Matrix *tmp1 = mat_mul_trans2(w_new, w);
         Matrix *tmp2 = diagonal(tmp1);
+        free_mat(tmp1);
         for (int ii = 0; ii < tmp2->height; ii++) {
             fp cur_dis = ABS(ABS(MAT_CELL(tmp2, ii, 0)) - 1);
-            if (cur_dis > distance)
+            if (cur_dis > distance) {
                 distance = cur_dis;
+            }
         }
+        free_mat(tmp2);
 
         // Update weights
         free_mat(w);
         w = w_new;
-
-        // Free memory
-        free_mat(ws);
-        free_mat(a);
-        free_mat(b);
-        free_mat(tmp1);
-        free_mat(tmp2);
-        free_tuple(res, true);
 
         if (distance < threshold)
             break;
