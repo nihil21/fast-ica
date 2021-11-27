@@ -17,3 +17,4 @@ __pycache__/
 S.bin
 X.bin
 S_.bin
+/pyutils/nilearn_cache/

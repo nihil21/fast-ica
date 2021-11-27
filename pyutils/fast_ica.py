@@ -3,6 +3,7 @@ from typing import Optional, Tuple
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy import signal
+from scipy import linalg
 
 
 def centering(x: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
@@ -202,12 +203,12 @@ def fast_ica(
     
     s = w @ xw
     
-    # if whiten:
+    #if whiten:
         # De-whiten mixing matrix
-        # a_tilde = np.linalg.inv(w)
-        # a = np.linalg.inv(white_mtx) @ a_tilde
+        #a = np.linalg.inv(white_mtx) @ np.linalg.inv(w)
+        #print(a)
         # Add mean
-        # s_mean = np.linalg.inv(a) @ x_mean
-        # s += s_mean
+        #s_mean = np.linalg.inv(a) @ x_mean
+        #s += s_mean
     
     return s
