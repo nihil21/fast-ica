@@ -5,6 +5,7 @@
 #include "../include/matrix.h"
 #include "../include/signal.h"
 #include "../include/fast_ica.h"
+#include "../include/linalg.h"
 
 int main(int argc, char **argv) {
     // Set default arguments
@@ -16,7 +17,7 @@ int main(int argc, char **argv) {
     fp threshold = 1e-4f;
     int max_iter = 3000;
     bool add_noise = true;
-    bool verbose = true;
+    bool verbose = false;
     // Read input args
     char *end;
     switch (argc) {
@@ -93,18 +94,18 @@ int main(int argc, char **argv) {
     write_mat("../X.bin", x);
 
     // Perform FastICA
-    Matrix *s_ = fast_ica(x, 3, true, strategy, g_function, threshold, max_iter);
+    /*Matrix *s_ = fast_ica(x, 3, true, strategy, g_function, threshold, max_iter);
     if (verbose) {
         printf("Restored signals:\n");
         print_mat(s_);
     }
-    write_mat("../S_.bin", s_);
+    write_mat("../S_.bin", s_);*/
 
     // Free memory
     free_mat(s);
     free_mat(a);
     free_mat(x);
-    free_mat(s_);
+    //free_mat(s_);
 
     return 0;
 }
