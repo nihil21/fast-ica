@@ -91,15 +91,15 @@ Tuple *qr_decomposition(Matrix *m) {
         free_mat(h_k);
         free_mat(tmp);
 
+        // Q(k + 1) = Q(k) @ H(k)
+        tmp = mat_mul(q, h);
+        free_mat(q);
+        q = tmp;
+
         // R(k + 1) = H(k) @ R(k)
         tmp = mat_mul(h, r);
         free_mat(r);
         r = tmp;
-
-        // Q(k + 1) = Q(k) @@ H(k)
-        tmp = mat_mul(q, h);
-        free_mat(q);
-        q = tmp;
 
         // Free memory
         free_mat(h);
