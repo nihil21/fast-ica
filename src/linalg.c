@@ -31,13 +31,13 @@ Matrix *to_hessenberg(Matrix *m) {
     for (int k = 0; k < n - 2; k++) {
         // Extract k-th column
         Matrix *h_k = read_slice(h, k + 1, n - 1, k, k);  // column vector
-        // Generate k-th Householder reflection, which can be applied as follows: Px = x - tau * v @ v.T @ x
+        // Generate k-th Householder reflection, which can be applied as follows: PX = X - tau * v @ v.T @ X
         fp tau;
         Matrix *v_k = generate_householder(h_k, &tau);
         free_mat(h_k);
 
         // Apply it from the left:
-        // h_k = h_k - tau * v_k @ v_k.T @ h_k
+        // H_k = H_k - tau * v_k @ v_k.T @ H_k
         h_k = read_slice(h, k + 1, n - 1, k, n - 1);
         Matrix *tmp1 = mat_mul_trans1(v_k, h_k);
         Matrix *tmp2 = outer(v_k, tmp1);
@@ -49,7 +49,7 @@ Matrix *to_hessenberg(Matrix *m) {
         free_mat(tmp2);
 
         // Apply it from the right:
-        // h_k = h_k - tau * (h_k @ v_k) @ v_k.T
+        // H_k = H_k - tau * (H_k @ v_k) @ v_k.T
         h_k = read_slice(h, 0, n - 1, k + 1, n - 1);
         tmp1 = mat_mul(h_k, v_k);
         tmp2 = mat_mul_trans2(tmp1, v_k);
@@ -81,7 +81,7 @@ Tuple *qr_decomposition(Matrix *m) {
         Matrix *v_k = generate_householder(r_k, &tau);
         free_mat(r_k);
 
-        // Compute Hk
+        // Compute H_k
         Matrix *h = eye(n);
         Matrix *h_k = read_slice(h, k, n - 1, k, n - 1);
         Matrix *tmp = mat_mul_trans2(v_k, v_k);
@@ -96,8 +96,8 @@ Tuple *qr_decomposition(Matrix *m) {
         free_mat(r);
         r = tmp;
 
-        // Q(k + 1) = H(k) @ Q(k)
-        tmp = mat_mul(h, q);
+        // Q(k + 1) = Q(k) @@ H(k)
+        tmp = mat_mul(q, h);
         free_mat(q);
         q = tmp;
 
@@ -107,10 +107,6 @@ Tuple *qr_decomposition(Matrix *m) {
     }
     // Make R upper triangular
     tri_up(&r);
-    // Transpose Q
-    Matrix *tmp = transpose(q);
-    free_mat(q);
-    q = tmp;
 
     // Pack Q and R into tuple
     Tuple *qr = new_tuple(q, r);
