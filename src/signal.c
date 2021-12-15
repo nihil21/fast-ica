@@ -43,7 +43,7 @@ Matrix *mod_mat(Matrix *m, fp k) {
 
     for (int i = 0; i < m->height; i++) {
         for (int j = 0; j < m->width; j++) {
-            MAT_CELL(s, i, j) = fmodf(MAT_CELL(m, i, j), k);
+            MAT_CELL(s, i, j) = MOD(MAT_CELL(m, i, j), k);
         }
     }
 
@@ -55,13 +55,13 @@ Matrix *generate_sine_wave(fp amp, fp freq, fp phase, int n_samples, fp range) {
     Matrix *t = linspace(0, range, n_samples);
     // Multiply it by angular velocity and translate it by phase (in-place)
     fp omega = 2 * PI * freq;
-    scale_(&t, omega);
-    add_scalar_(&t, phase);
+    scale_(t, omega);
+    add_scalar_(t, phase);
 
     // Generate sine wave
     Matrix *st = sine_mat(t);
     // Multiply by amplitude (in-place)
-    scale_(&st, amp);
+    scale_(st, amp);
     // Transpose into row vector
     Matrix *s = transpose(st);
 
@@ -77,14 +77,14 @@ Matrix *generate_square_wave(fp amp, fp freq, fp phase, int n_samples, fp range)
     Matrix *t = linspace(0, range, n_samples);
     // Multiply it by angular velocity and translate it by phase (in-place)
     fp omega = 2 * PI * freq;
-    scale_(&t, omega);
-    add_scalar_(&t, phase);
+    scale_(t, omega);
+    add_scalar_(t, phase);
 
     // Generate sine wave
     Matrix *tmp = sine_mat(t);
     Matrix *st = sgn_mat(tmp);
     // Multiply by amplitude (in-place)
-    scale_(&st, amp);
+    scale_(st, amp);
     // Transpose into row vector
     Matrix *s = transpose(st);
 
@@ -101,15 +101,15 @@ Matrix *generate_sawtooth_wave(fp amp, fp freq, fp phase, int n_samples, fp rang
     Matrix *t = linspace(0, range, n_samples);
     // Multiply it by angular velocity and translate it by phase (in-place)
     fp omega = 2 * PI * freq;
-    scale_(&t, omega);
-    add_scalar_(&t, phase);
+    scale_(t, omega);
+    add_scalar_(t, phase);
 
     // Generate sawtooth wave
     Matrix *st = mod_mat(t, 2 * PI);
-    scale_(&st, 1 / PI);
-    add_scalar_(&st, -1.f);
+    scale_(st, 1 / PI);
+    add_scalar_(st, -1.f);
     // Multiply by amplitude (in-place)
-    scale_(&st, amp);
+    scale_(st, amp);
     // Transpose into row vector
     Matrix *s = transpose(st);
 
@@ -130,15 +130,15 @@ Matrix *generate_signals(int n_samples, fp range, bool add_noise) {
 
     // Stack them
     Matrix *s = new_mat(3, n_samples);
-    paste_row(&s, s1, 0);
-    paste_row(&s, s2, 1);
-    paste_row(&s, s3, 2);
+    paste_row(s, s1, 0);
+    paste_row(s, s2, 1);
+    paste_row(s, s3, 2);
 
     // Apply gaussian noise
     if (add_noise) {
         Matrix *ns = mat_randn(s->height, s->width);
-        scale_(&ns, 0.2f);
-        add_mat_(&s, ns);
+        scale_(ns, 0.2f);
+        add_mat_(s, ns);
         free_mat(ns);
     }
 

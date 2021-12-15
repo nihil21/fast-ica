@@ -89,12 +89,12 @@ Tuple *abs_f(Matrix *x) {
 /*
  * Implement Gram-Schmidt decorrelation
  */
-void gram_schmidt_decorrelation(Matrix **w_i_new, Matrix *w, int i) {
+void gram_schmidt_decorrelation(Matrix *w_i_new, Matrix *w, int i) {
     if (i > 0) {
         Matrix *w_slice = read_slice(w, 0, i - 1, 0, w->width - 1);
         Matrix *tmp_mat = mat_mul_trans1(w_slice, w_slice);
         free_mat(w_slice);
-        Matrix *tmp_vec = mat_mul(*w_i_new, tmp_mat);
+        Matrix *tmp_vec = mat_mul(w_i_new, tmp_mat);
         free_mat(tmp_mat);
         sub_mat_(w_i_new, tmp_vec);
         free_mat(tmp_vec);
@@ -140,7 +140,7 @@ Matrix *ica_def(Matrix *x_w, Tuple *(*g_func)(Matrix *), fp threshold, int max_i
     for (int k = 0; k < n_units; k++) {
         // Initialize i-th neuron
         Matrix *w_k = extract_row(w, k);  // row vector
-        scale_(&w_k, 1 / norm(w_k));
+        scale_(w_k, 1 / norm(w_k));
 
         for (int i = 0; i < max_iter; i++) {
             // (1, n_units) @ (n_units, n_samples) -> (1, n_samples)
@@ -153,7 +153,7 @@ Matrix *ica_def(Matrix *x_w, Tuple *(*g_func)(Matrix *), fp threshold, int max_i
 
             // (1, n_samples) @ (n_units, n_samples).T -> (1, n_samples) @ (n_samples, n_units) -> (1, n_units)
             Matrix *a = mat_mul_trans2(g_ws, x_w);
-            scale_(&a, 1 / (fp) n_samples);
+            scale_(a, 1 / (fp) n_samples);
             // (1, n_units) * E[(1, n_samples)] -> (1, n_units)
             Matrix *b = scale(w_k, mean(gw_s_prime));
             free_tuple(res, true);
@@ -163,9 +163,9 @@ Matrix *ica_def(Matrix *x_w, Tuple *(*g_func)(Matrix *), fp threshold, int max_i
             free_mat(a);
             free_mat(b);
             // Decorrelate
-            gram_schmidt_decorrelation(&w_k_new, w, k);
+            gram_schmidt_decorrelation(w_k_new, w, k);
             // Normalize
-            scale_(&w_k_new, 1 / norm(w_k_new));
+            scale_(w_k_new, 1 / norm(w_k_new));
 
             // Compute distance
             fp distance = ABS(dot(w_k_new, w_k) - 1.f);
@@ -178,7 +178,7 @@ Matrix *ica_def(Matrix *x_w, Tuple *(*g_func)(Matrix *), fp threshold, int max_i
                 break;
         }
         // Save weight vector
-        paste_row(&w, w_k, k);
+        paste_row(w, w_k, k);
         free_mat(w_k);
     }
 
@@ -213,7 +213,7 @@ Matrix *ica_par(Matrix *x_w, Tuple *(*g_func)(Matrix *), fp threshold, int max_i
             Matrix *g_ws_k = extract_row(g_ws, k);  // row vector
             // (1, n_samples) @ (n_units, n_samples).T -> (1, n_samples) @ (n_samples, n_units) -> (1, n_units)
             Matrix *a_k = mat_mul_trans2(g_ws_k, x_w);
-            scale_(&a_k, 1 / (fp) n_samples);
+            scale_(a_k, 1 / (fp) n_samples);
             free_mat(g_ws_k);
 
             // Extract k-th row from G_Ws'
@@ -226,8 +226,8 @@ Matrix *ica_par(Matrix *x_w, Tuple *(*g_func)(Matrix *), fp threshold, int max_i
             free_mat(w_k);
 
             // Paste rows
-            paste_row(&a, a_k, k);
-            paste_row(&b, b_k, k);
+            paste_row(a, a_k, k);
+            paste_row(b, b_k, k);
             free_mat(a_k);
             free_mat(b_k);
         }

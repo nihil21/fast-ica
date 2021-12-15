@@ -29,7 +29,7 @@ void eigen_sort(Matrix *eig_vals, Matrix *eig_vecs) {
     for (int i = 0; i < n_eig; i++) {
         int idx = sort_idx[i];
         Matrix *eig_vec = extract_col(eig_vecs_copy, idx);
-        write_slice(&eig_vecs, eig_vec, 0, i);
+        write_slice(eig_vecs, eig_vec, 0, i);
 
         free_mat(eig_vec);
     }

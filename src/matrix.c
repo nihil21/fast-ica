@@ -11,7 +11,7 @@
 /*
  * Initialize a zero matrix given its dimensions
  */
-Matrix *new_mat(int height, int width) {
+Matrix *new_mat(const int height, const int width) {
     assert(height > 0 && width > 0, "Matrix height and width should be greater than 0.");
     Matrix *m = NULL;
     m = calloc(1, sizeof(Matrix));
@@ -28,7 +28,7 @@ Matrix *new_mat(int height, int width) {
 /*
  * Initialize a zero column vector given its dimensions
  */
-Matrix *new_vec(int length) {
+Matrix *new_vec(const int length) {
     return new_mat(length, 1);
 }
 
@@ -49,7 +49,7 @@ void free_mat(Matrix *m) {
 /*
  * Allocate the identity matrix
  */
-Matrix *eye(int n) {
+Matrix *eye(const int n) {
     Matrix *i = new_mat(n, n);
 
     for (int k = 0; k < n; k++) {
@@ -62,7 +62,7 @@ Matrix *eye(int n) {
 /*
  * Allocate a matrix with the given dimensions and fill it with random uniform integers in a given range
  */
-Matrix *mat_randint(int height, int width, int min, int max) {
+Matrix *mat_randint(const int height, const int width, const int min, const int max) {
     Matrix *m = new_mat(height, width);
 
     for (int i = 0; i < height; i++) {
@@ -77,7 +77,7 @@ Matrix *mat_randint(int height, int width, int min, int max) {
 /*
  * Allocate a matrix with the given dimensions and fill it with random uniform numbers in a given range
  */
-Matrix *mat_rand(int height, int width, fp min, fp max) {
+Matrix *mat_rand(const int height, const int width, const fp min, const fp max) {
     Matrix *m = new_mat(height, width);
 
     for (int i = 0; i < height; i++) {
@@ -92,7 +92,7 @@ Matrix *mat_rand(int height, int width, fp min, fp max) {
 /*
  * Allocate a matrix with the given dimensions and fill it with random normal numbers
  */
-Matrix *mat_randn(int height, int width) {
+Matrix *mat_randn(const int height, const int width) {
     Matrix *m = new_mat(height, width);
 
     for (int i = 0; i < height; i++) {
@@ -107,7 +107,7 @@ Matrix *mat_randn(int height, int width) {
 /*
  * Build a linear space with the given range and number of samples
  */
-Matrix *linspace(fp start, fp stop, int n_samples) {
+Matrix *linspace(const fp start, const fp stop, const int n_samples) {
     assert(start < stop, "The stop argument should be greater than the start argument.");
 
     Matrix *ls = new_vec(n_samples);
@@ -123,7 +123,7 @@ Matrix *linspace(fp start, fp stop, int n_samples) {
 /*
  * Compute the L2 norm of a given matrix
  */
-fp norm(Matrix *m) {
+fp norm(const Matrix *m) {
     fp acc = 0;
     for (int i = 0; i < m->height; i++) {
         for (int j = 0; j < m->width; j++) {
@@ -136,7 +136,7 @@ fp norm(Matrix *m) {
 /*
  * Get the mean of a given matrix
  */
-fp mean(Matrix *m) {
+fp mean(const Matrix *m) {
     fp acc = 0;
     for (int i = 0; i < m->height; i++) {
         for (int j = 0; j < m->width; j++) {
@@ -149,7 +149,7 @@ fp mean(Matrix *m) {
 /*
  * Get the mean of a given matrix along rows
  */
-Matrix *row_mean(Matrix *m) {
+Matrix *row_mean(const Matrix *m) {
     Matrix *r = new_mat(1, m->width);  // row vector
 
     // Memory access not contiguous
@@ -167,7 +167,7 @@ Matrix *row_mean(Matrix *m) {
 /*
  * Get the mean of a given matrix along columns
  */
-Matrix *col_mean(Matrix *m) {
+Matrix *col_mean(const Matrix *m) {
     Matrix *c = new_vec(m->height);  // column vector
 
     for (int i = 0; i < m->height; i++) {
@@ -182,9 +182,73 @@ Matrix *col_mean(Matrix *m) {
 }
 
 /*
+ * Get the standard deviation of a given matrix
+ */
+fp std(const Matrix*m) {
+    // Compute mean
+    fp mean_ = mean(m);
+
+    fp acc = 0;
+    for (int i = 0; i < m->height; i++) {
+        for (int j = 0; j < m->width; j++) {
+            acc += POW(MAT_CELL(m, i, j) - mean_, 2);
+        }
+    }
+
+    return SQRT(acc / (fp) (m->height * m->width));
+}
+
+/*
+ * Get the standard deviation of a given matrix along rows
+ */
+Matrix *row_std(const Matrix *m) {
+    Matrix *r = new_mat(1, m->width);  // row vector
+
+    // Compute mean
+    Matrix *mean_ = row_mean(m);
+
+    // Memory access not contiguous
+    for (int j = 0; j < m->width; j++) {
+        fp acc = 0;
+        for (int i = 0; i < m->height; i++) {
+            acc += POW(MAT_CELL(m, i, j) - MAT_CELL(mean_, 0, j), 2);
+        }
+        MAT_CELL(r, 0, j) = SQRT(acc / (fp) m->height);
+    }
+
+    // Free memory
+    free_mat(mean_);
+
+    return r;
+}
+
+/*
+ * Get the standard deviation of a given matrix along columns
+ */
+Matrix *col_std(const Matrix *m) {
+    Matrix *c = new_mat(m->height, 1);  // column vector
+
+    // Compute mean
+    Matrix *mean_ = col_mean(m);
+
+    for (int i = 0; i < m->height; i++) {
+        fp acc = 0;
+        for (int j = 0; j < m->width; j++) {
+            acc += POW(MAT_CELL(m, i, j) - MAT_CELL(mean_, i, 0), 2);
+        }
+        MAT_CELL(c, i, 0) = SQRT(acc / (fp) m->width);
+    }
+
+    // Free memory
+    free_mat(mean_);
+
+    return c;
+}
+
+/*
  * Transpose a matrix
  */
-Matrix *transpose(Matrix* m) {
+Matrix *transpose(const Matrix * m) {
     int t_height = m->width;
     int t_width = m->height;
     Matrix *t = new_mat(t_height, t_width);
@@ -199,9 +263,35 @@ Matrix *transpose(Matrix* m) {
 }
 
 /*
+ * Add scalar to matrix
+ */
+Matrix *add_scalar(const Matrix *m, const fp scalar) {
+    Matrix *s = new_mat(m->height, m->width);
+
+    for (int i = 0; i < m->height; i++) {
+        for (int j = 0; j < m->width; j++) {
+            MAT_CELL(s, i, j) = MAT_CELL(m, i, j) + scalar;
+        }
+    }
+
+    return s;
+}
+
+/*
+ * Add scalar to matrix (in-place operation, it modifies the matrix)
+ */
+void add_scalar_(const Matrix *m, const fp scalar) {
+    for (int i = 0; i < m->height; i++) {
+        for (int j = 0; j < m->width; j++) {
+            MAT_CELL(m, i, j) += scalar;
+        }
+    }
+}
+
+/*
  * Scales a matrix by a scalar constant
  */
-Matrix *scale(Matrix *m, fp scalar) {
+Matrix *scale(const Matrix *m, const fp scalar) {
     Matrix *s = new_mat(m->height, m->width);
 
     for (int i = 0; i < m->height; i++) {
@@ -216,10 +306,10 @@ Matrix *scale(Matrix *m, fp scalar) {
 /*
  * Scales a matrix by a scalar constant (in-place operation, it modifies the matrix)
  */
-void scale_(Matrix **m, fp scalar) {
-    for (int i = 0; i < (*m)->height; i++) {
-        for (int j = 0; j < (*m)->width; j++) {
-            MAT_CELL(*m, i, j) *= scalar;
+void scale_(const Matrix *m, const fp scalar) {
+    for (int i = 0; i < m->height; i++) {
+        for (int j = 0; j < m->width; j++) {
+            MAT_CELL(m, i, j) *= scalar;
         }
     }
 }
@@ -227,7 +317,7 @@ void scale_(Matrix **m, fp scalar) {
 /*
  * Perform element-wise addition between two matrices with same shape
  */
-Matrix *add_mat(Matrix *m1, Matrix *m2) {
+Matrix *add_mat(const Matrix *m1, const Matrix *m2) {
     assert(m1->height == m2->height && m1->width == m2->width, "The two matrices should have the same shape.");
     Matrix *s = new_mat(m1->height, m1->width);
 
@@ -243,12 +333,12 @@ Matrix *add_mat(Matrix *m1, Matrix *m2) {
 /*
  * Perform element-wise addition between two matrices with same shape (in-place operation, it modifies the first matrix)
  */
-void add_mat_(Matrix **m1, Matrix *m2) {
-    assert((*m1)->height == m2->height && (*m1)->width == m2->width, "The two matrices should have the same shape.");
+void add_mat_(const Matrix *m1, const Matrix *m2) {
+    assert(m1->height == m2->height && m1->width == m2->width, "The two matrices should have the same shape.");
 
-    for (int i = 0; i < (*m1)->height; i++) {
-        for (int j = 0; j < (*m1)->width; j++) {
-            MAT_CELL(*m1, i, j) += MAT_CELL(m2, i, j);
+    for (int i = 0; i < m1->height; i++) {
+        for (int j = 0; j < m1->width; j++) {
+            MAT_CELL(m1, i, j) += MAT_CELL(m2, i, j);
         }
     }
 }
@@ -256,7 +346,7 @@ void add_mat_(Matrix **m1, Matrix *m2) {
 /*
  * Perform row-wise addition between a matrix and a row vector with same width
  */
-Matrix *add_row(Matrix *m, Matrix *r) {
+Matrix *add_row(const Matrix *m, const Matrix *r) {
     assert(is_row_vector(r), "The second matrix should be a row vector (i.e. with height equal to 1).");
     assert(r->width == m->width, "The width of the first matrix and the length of the row vector (i.e. its width) should be the same.");
     Matrix *s = new_mat(m->height, m->width);
@@ -274,13 +364,13 @@ Matrix *add_row(Matrix *m, Matrix *r) {
 /*
  * Perform row-wise addition between a matrix and a row vector with same width (in-place operation, it modifies the first matrix)
  */
-void add_row_(Matrix **m, Matrix *r) {
+void add_row_(const Matrix *m, const Matrix *r) {
     assert(is_row_vector(r), "The second matrix should be a row vector (i.e. with height equal to 1).");
-    assert(r->width == (*m)->width, "The width of the first matrix and the length of the row vector (i.e. its width) should be the same.");
+    assert(r->width == m->width, "The width of the first matrix and the length of the row vector (i.e. its width) should be the same.");
 
-    for (int i = 0; i < (*m)->height; i++) {
-        for (int j = 0; j < (*m)->width; j++) {
-            MAT_CELL(*m, i, j) += MAT_CELL(r, 0, i);
+    for (int i = 0; i < m->height; i++) {
+        for (int j = 0; j < m->width; j++) {
+            MAT_CELL(m, i, j) += MAT_CELL(r, 0, i);
         }
     }
 }
@@ -288,7 +378,7 @@ void add_row_(Matrix **m, Matrix *r) {
 /*
  * Perform column-wise addition between a matrix and a column vector with same height
  */
-Matrix *add_col(Matrix *m, Matrix *c) {
+Matrix *add_col(const Matrix *m, const Matrix *c) {
     assert(is_col_vector(c), "The second matrix should be a column vector (i.e. with width equal to 1).");
     assert(c->height == m->height, "The height of the first matrix and the length of the column vector (i.e. its height) should be the same.");
     Matrix *s = new_mat(m->height, m->width);
@@ -305,13 +395,13 @@ Matrix *add_col(Matrix *m, Matrix *c) {
 /*
  * Perform column-wise addition between a matrix and a column vector with same height (in-place operation, it modifies the first matrix)
  */
-void add_col_(Matrix **m, Matrix *c) {
+void add_col_(const Matrix *m, const Matrix *c) {
     assert(is_col_vector(c), "The second matrix should be a column vector (i.e. with width equal to 1).");
-    assert(c->height == (*m)->height, "The height of the first matrix and the length of the column vector (i.e. its height) should be the same.");
+    assert(c->height == m->height, "The height of the first matrix and the length of the column vector (i.e. its height) should be the same.");
 
-    for (int i = 0; i < (*m)->height; i++) {
-        for (int j = 0; j < (*m)->width; j++) {
-            MAT_CELL(*m, i, j) += MAT_CELL(c, i, 0);
+    for (int i = 0; i < m->height; i++) {
+        for (int j = 0; j < m->width; j++) {
+            MAT_CELL(m, i, j) += MAT_CELL(c, i, 0);
         }
     }
 }
@@ -319,7 +409,7 @@ void add_col_(Matrix **m, Matrix *c) {
 /*
  * Perform element-wise subtraction between two matrices with same shape
  */
-Matrix *sub_mat(Matrix *m1, Matrix *m2) {
+Matrix *sub_mat(const Matrix *m1, const Matrix *m2) {
     assert(m1->height == m2->height && m1->width == m2->width, "The two matrices should have the same shape.");
     Matrix *s = new_mat(m1->height, m1->width);
 
@@ -335,12 +425,12 @@ Matrix *sub_mat(Matrix *m1, Matrix *m2) {
 /*
  * Perform element-wise subtraction between two matrices with same shape (in-place operation, it modifies the first matrix)
  */
-void sub_mat_(Matrix **m1, Matrix *m2) {
-    assert((*m1)->height == m2->height && (*m1)->width == m2->width, "The two matrices should have the same shape.");
+void sub_mat_(const Matrix *m1, const Matrix *m2) {
+    assert(m1->height == m2->height && m1->width == m2->width, "The two matrices should have the same shape.");
 
-    for (int i = 0; i < (*m1)->height; i++) {
-        for (int j = 0; j < (*m1)->width; j++) {
-            MAT_CELL(*m1, i, j) -= MAT_CELL(m2, i, j);
+    for (int i = 0; i < m1->height; i++) {
+        for (int j = 0; j < m1->width; j++) {
+            MAT_CELL(m1, i, j) -= MAT_CELL(m2, i, j);
         }
     }
 }
@@ -348,7 +438,7 @@ void sub_mat_(Matrix **m1, Matrix *m2) {
 /*
  * Perform row-wise subtraction between a matrix and a row vector with same width
  */
-Matrix *sub_row(Matrix *m, Matrix *r) {
+Matrix *sub_row(const Matrix *m, const Matrix *r) {
     assert(is_row_vector(r), "The second matrix should be a row vector (i.e. with height equal to 1).");
     assert(r->width == m->width, "The width of the first matrix and the length of the row vector (i.e. its width) should be the same.");
     Matrix *s = new_mat(m->height, m->width);
@@ -365,13 +455,13 @@ Matrix *sub_row(Matrix *m, Matrix *r) {
 /*
  * Perform row-wise subtraction between a matrix and a row vector with same width (in-place operation, it modifies the first matrix)
  */
-void sub_row_(Matrix **m, Matrix *r) {
+void sub_row_(const Matrix *m, const Matrix *r) {
     assert(is_row_vector(r), "The second matrix should be a row vector (i.e. with height equal to 1).");
-    assert(r->width == (*m)->width, "The width of the first matrix and the length of the row vector (i.e. its width) should be the same.");
+    assert(r->width == m->width, "The width of the first matrix and the length of the row vector (i.e. its width) should be the same.");
 
-    for (int i = 0; i < (*m)->height; i++) {
-        for (int j = 0; j < (*m)->width; j++) {
-            MAT_CELL(*m, i, j) -= MAT_CELL(r, 0, i);
+    for (int i = 0; i < m->height; i++) {
+        for (int j = 0; j < m->width; j++) {
+            MAT_CELL(m, i, j) -= MAT_CELL(r, 0, i);
         }
     }
 }
@@ -379,7 +469,7 @@ void sub_row_(Matrix **m, Matrix *r) {
 /*
  * Perform column-wise subtraction between a matrix and a column vector with same height
  */
-Matrix *sub_col(Matrix *m, Matrix *c) {
+Matrix *sub_col(const Matrix *m, const Matrix *c) {
     assert(is_col_vector(c), "The second matrix should be a column vector (i.e. with width equal to 1).");
     assert(c->height == m->height, "The height of the first matrix and the length of the column vector (i.e. its height) should be the same.");
     Matrix *s = new_mat(m->height, m->width);
@@ -396,39 +486,13 @@ Matrix *sub_col(Matrix *m, Matrix *c) {
 /*
  * Perform column-wise subtraction between a matrix and a column vector with same height (in-place operation, it modifies the first matrix)
  */
-void sub_col_(Matrix **m, Matrix *c) {
+void sub_col_(const Matrix *m, const Matrix *c) {
     assert(is_col_vector(c), "The second matrix should be a column vector (i.e. with width equal to 1).");
-    assert(c->height == (*m)->height, "The height of the first matrix and the length of the column vector (i.e. its height) should be the same.");
-
-    for (int i = 0; i < (*m)->height; i++) {
-        for (int j = 0; j < (*m)->width; j++) {
-            MAT_CELL(*m, i, j) -= MAT_CELL(c, i, 0);
-        }
-    }
-}
-
-/*
- * Add scalar to matrix
- */
-Matrix *add_scalar(Matrix *m, fp scalar) {
-    Matrix *s = new_mat(m->height, m->width);
+    assert(c->height == m->height, "The height of the first matrix and the length of the column vector (i.e. its height) should be the same.");
 
     for (int i = 0; i < m->height; i++) {
         for (int j = 0; j < m->width; j++) {
-            MAT_CELL(s, i, j) = MAT_CELL(m, i, j) + scalar;
-        }
-    }
-
-    return s;
-}
-
-/*
- * Add scalar to matrix (in-place operation, it modifies the matrix)
- */
-void add_scalar_(Matrix **m, fp scalar) {
-    for (int i = 0; i < (*m)->height; i++) {
-        for (int j = 0; j < (*m)->width; j++) {
-            MAT_CELL(*m, i, j) += scalar;
+            MAT_CELL(m, i, j) -= MAT_CELL(c, i, 0);
         }
     }
 }
@@ -436,7 +500,7 @@ void add_scalar_(Matrix **m, fp scalar) {
 /*
  * Perform element-wise product (i.e. Hadamard) between two matrices with same shape
  */
-Matrix *hadamard(Matrix *m1, Matrix *m2) {
+Matrix *hadamard(const Matrix *m1, const Matrix *m2) {
     assert(m1->height == m2->height && m1->width == m2->width, "The two matrices should have the same shape.");
     Matrix *s = new_mat(m1->height, m1->width);
 
@@ -452,12 +516,12 @@ Matrix *hadamard(Matrix *m1, Matrix *m2) {
 /*
  * Perform element-wise product (i.e. Hadamard) between two matrices with same shape (in-place operation, it modifies the first matrix)
  */
-void hadamard_(Matrix **m1, Matrix *m2) {
-    assert((*m1)->height == m2->height && (*m1)->width == m2->width, "The two matrices should have the same shape.");
+void hadamard_(const Matrix *m1, const Matrix *m2) {
+    assert(m1->height == m2->height && m1->width == m2->width, "The two matrices should have the same shape.");
 
-    for (int i = 0; i < (*m1)->height; i++) {
-        for (int j = 0; j < (*m1)->width; j++) {
-            MAT_CELL(*m1, i, j) *= MAT_CELL(m2, i, j);
+    for (int i = 0; i < m1->height; i++) {
+        for (int j = 0; j < m1->width; j++) {
+            MAT_CELL(m1, i, j) *= MAT_CELL(m2, i, j);
         }
     }
 }
@@ -465,7 +529,7 @@ void hadamard_(Matrix **m1, Matrix *m2) {
 /*
  * Perform row-wise product (i.e. Hadamard) between a matrix and a row vector with same width
  */
-Matrix *hadamard_row(Matrix *m, Matrix *r) {
+Matrix *hadamard_row(const Matrix *m, const Matrix *r) {
     assert(is_row_vector(r), "The second matrix should be a row vector (i.e. with height equal to 1).");
     assert(r->width == m->width, "The width of the first matrix and the length of the row vector (i.e. its width) should be the same.");
     Matrix *s = new_mat(m->height, m->width);
@@ -482,13 +546,13 @@ Matrix *hadamard_row(Matrix *m, Matrix *r) {
 /*
  * Perform row-wise product (i.e. Hadamard) between a matrix and a row vector with same width (in-place operation, it modifies the first matrix)
  */
-void hadamard_row_(Matrix **m, Matrix *r) {
+void hadamard_row_(const Matrix *m, const Matrix *r) {
     assert(is_row_vector(r), "The second matrix should be a row vector (i.e. with height equal to 1).");
-    assert(r->width == (*m)->width, "The width of the first matrix and the length of the row vector (i.e. its width) should be the same.");
+    assert(r->width == m->width, "The width of the first matrix and the length of the row vector (i.e. its width) should be the same.");
 
-    for (int i = 0; i < (*m)->height; i++) {
-        for (int j = 0; j < (*m)->width; j++) {
-            MAT_CELL(*m, i, j) *= MAT_CELL(r, 0, i);
+    for (int i = 0; i < m->height; i++) {
+        for (int j = 0; j < m->width; j++) {
+            MAT_CELL(m, i, j) *= MAT_CELL(r, 0, i);
         }
     }
 }
@@ -496,7 +560,7 @@ void hadamard_row_(Matrix **m, Matrix *r) {
 /*
  * Perform column-wise product (i.e. Hadamard) between a matrix and a column vector with same height
  */
-Matrix *hadamard_col(Matrix *m, Matrix *c) {
+Matrix *hadamard_col(const Matrix *m, const Matrix *c) {
     assert(is_col_vector(c), "The second matrix should be a column vector (i.e. with width equal to 1).");
     assert(c->height == m->height, "The height of the first matrix and the length of the column vector (i.e. its height) should be the same.");
     Matrix *s = new_mat(m->height, m->width);
@@ -513,13 +577,98 @@ Matrix *hadamard_col(Matrix *m, Matrix *c) {
 /*
  * Perform column-wise product (i.e. Hadamard) between a matrix and a column vector with same height (in-place operation, it modifies the first matrix)
  */
-void hadamard_col_(Matrix **m, Matrix *c) {
+void hadamard_col_(const Matrix *m, const Matrix *c) {
     assert(is_col_vector(c), "The second matrix should be a column vector (i.e. with width equal to 1).");
-    assert(c->height == (*m)->height, "The height of the first matrix and the length of the column vector (i.e. its height) should be the same.");
+    assert(c->height == m->height, "The height of the first matrix and the length of the column vector (i.e. its height) should be the same.");
 
-    for (int i = 0; i < (*m)->height; i++) {
-        for (int j = 0; j < (*m)->width; j++) {
-            MAT_CELL(*m, i, j) *= MAT_CELL(c, i, 0);
+    for (int i = 0; i < m->height; i++) {
+        for (int j = 0; j < m->width; j++) {
+            MAT_CELL(m, i, j) *= MAT_CELL(c, i, 0);
+        }
+    }
+}
+
+/*
+ * Perform element-wise division between two matrices with same shape
+ */
+Matrix *div_mat(const Matrix *m1, const Matrix *m2) {
+    assert(m1->height == m2->height && m1->width == m2->width, "The two matrices should have the same shape.");
+    Matrix *s = new_mat(m1->height, m1->width);
+
+    for (int i = 0; i < m1->height; i++) {
+        for (int j = 0; j < m1->width; j++) {
+            MAT_CELL(s, i, j) = MAT_CELL(m1, i, j) / MAT_CELL(m2, i, j);
+        }
+    }
+}
+
+/*
+ * Perform element-wise division between two matrices with same shape (in-place operation, it modifies the first matrix)
+ */
+void div_mat_(const Matrix *m1, const Matrix *m2) {
+    assert(m1->height == m2->height && m1->width == m2->width, "The two matrices should have the same shape.");
+
+    for (int i = 0; i < m1->height; i++) {
+        for (int j = 0; j < m1->width; j++) {
+            MAT_CELL(m1, i, j) /= MAT_CELL(m2, i, j);
+        }
+    }
+}
+
+/*
+ * Perform row-wise division between a matrix and a row vector with same width
+ */
+Matrix *div_row(const Matrix *m, const Matrix *r) {
+    assert(is_row_vector(r), "The second matrix should be a row vector (i.e. with height equal to 1).");
+    assert(r->width == m->width, "The width of the first matrix and the length of the row vector (i.e. its width) should be the same.");
+    Matrix *s = new_mat(m->height, m->width);
+
+    for (int i = 0; i < m->height; i++) {
+        for (int j = 0; j < m->width; j++) {
+            MAT_CELL(s, i, j) = MAT_CELL(m, i, j) / MAT_CELL(r, 0, i);
+        }
+    }
+}
+
+/*
+ * Perform row-wise division between a matrix and a row vector with same width (in-place operation, it modifies the first matrix)
+ */
+void div_row_(const Matrix *m, const Matrix *r) {
+    assert(is_row_vector(r), "The second matrix should be a row vector (i.e. with height equal to 1).");
+    assert(r->width == m->width, "The width of the first matrix and the length of the row vector (i.e. its width) should be the same.");
+
+    for (int i = 0; i < m->height; i++) {
+        for (int j = 0; j < m->width; j++) {
+            MAT_CELL(m, i, j) /= MAT_CELL(r, 0, i);
+        }
+    }
+}
+
+/*
+ * Perform column-wise division between a matrix and a column vector with same height
+ */
+Matrix *div_col(const Matrix *m, const Matrix *c) {
+    assert(is_col_vector(c), "The second matrix should be a column vector (i.e. with width equal to 1).");
+    assert(c->height == m->height, "The height of the first matrix and the length of the column vector (i.e. its height) should be the same.");
+    Matrix *s = new_mat(m->height, m->width);
+
+    for (int i = 0; i < m->height; i++) {
+        for (int j = 0; j < m->width; j++) {
+            MAT_CELL(s, i, j) = MAT_CELL(m, i, j) / MAT_CELL(c, i, 0);
+        }
+    }
+}
+
+/*
+ * Perform column-wise division between a matrix and a column vector with same height (in-place operation, it modifies the first matrix)
+ */
+void div_col_(const Matrix *m, const Matrix *c) {
+    assert(is_col_vector(c), "The second matrix should be a column vector (i.e. with width equal to 1).");
+    assert(c->height == m->height, "The height of the first matrix and the length of the column vector (i.e. its height) should be the same.");
+
+    for (int i = 0; i < m->height; i++) {
+        for (int j = 0; j < m->width; j++) {
+            MAT_CELL(m, i, j) /= MAT_CELL(c, i, 0);
         }
     }
 }
@@ -527,7 +676,7 @@ void hadamard_col_(Matrix **m, Matrix *c) {
 /*
  * Perform matrix multiplication between an AxB matrix and a BxC matrix
  */
-Matrix *mat_mul(Matrix *m1, Matrix *m2) {
+Matrix *mat_mul(const Matrix *m1, const Matrix *m2) {
     assert(m1->width == m2->height, "The width of the first matrix and the height of the second matrix should be equal.");
     Matrix *s = new_mat(m1->height, m2->width);
 
@@ -584,50 +733,28 @@ Matrix *mat_mul_trans2(Matrix* m1, Matrix* m2) {
 /*
  * Perform dot product between two vectors
  */
-fp dot(Matrix *v1, Matrix *v2) {
+fp dot(const Matrix *v1, const Matrix *v2) {
     assert(is_vector(v1) && is_vector(v2), "The two matrices should be vectors (i.e. either their height or width should be equal to 1).");
-    Matrix *s;
+    assert(MAX(v1->height, v1->width) == MAX(v2->height, v2->width), "The two vectors should have the same length.");
 
-    if (is_row_vector(v1)) {  // V1: (1, N)
-        if (is_row_vector(v2)) {  // V2: (1, N)
-            assert(v1->width == v2->width, "The two vectors should have the same length.");
-            s = mat_mul_trans2(v1, v2);  // (1, N) @ (1, N).T = (1, N) @ (N, 1) = (1, 1)
-        } else {  // V2: (N, 1)
-            assert(v1->width == v2->height, "The two vectors should have the same length.");
-            s = mat_mul(v1, v2);  // (1, N) @ (N, 1) = (1, 1)
-        }
-    } else {  // V1: (N, 1)
-        if (is_row_vector(v2)) {  // V2: (1, N)
-            assert(v1->height == v2->width, "The two vectors should have the same length.");
-            s = mat_mul(v2, v1);  // (1, N) @ (N, 1) = (1, 1)
-        } else {  // V2: (N, 1)
-            assert(v1->height == v2->height, "The two vectors should have the same length.");
-            s = mat_mul_trans1(v1, v2);  // (N, 1).T @ (N, 1) = (1, N) @ (N, 1) = (1, 1)
-        }
+    fp acc = 0;
+    const int len = v1->height == 1 ? v1->width : v1->height;
+    for (int i = 0; i < len; i++) {
+        acc += MAT_DATA(v1)[i] * MAT_DATA(v2)[i];
     }
 
-    fp res = MAT_CELL(s, 0, 0);
-    free_mat(s);
-    return res;
+    return acc;
 }
 
-Matrix *outer(Matrix *v1, Matrix *v2) {
-    assert(is_vector(v1) && is_vector(v2), "The two matrices should be vectors (i.e. either their height or width should be equal to 1).");
-    Matrix *s;
+Matrix *outer(const Matrix *v1, const Matrix *v2) {
+    assert(is_vector(v1) && is_vector(v2), "The v1 and v2 matrices should be vectors (i.e. either their height or width should be equal to 1).");
+    Matrix *s = new_mat(MAX(v1->height, v1->width), MAX(v2->height, v2->width));
 
-    if (is_row_vector(v1)) {  // V1: (1, N)
-        if (is_row_vector(v2)) {  // V2: (1, M)
-            s = mat_mul_trans1(v1, v2);  // (1, N).T @ (1, M) = (N, 1) @ (1, M) = (N, M)
-        } else {  // V2: (M, 1)
-            Matrix *v2_t = transpose(v2);  // (M, 1).T = (1, M)
-            s = mat_mul_trans1(v1, v2_t);  // (1, N).T @ (1, M) = (N, 1) @ (1, M) = (N, M)
-            free_mat(v2_t);
-        }
-    } else {  // V1: (N, 1)
-        if (is_row_vector(v2)) {  // V2: (1, M)
-            s = mat_mul(v1, v2);  // (N, 1) @ (1, M) = (N, M)
-        } else {  // V2: (M, 1)
-            s = mat_mul_trans2(v1, v2);  // (N, 1) @ (M, 1).T = (N, 1) @ (1, M) = (N, M)
+    const int len1 = MAX(v1->height, v1->width);
+    const int len2 = MAX(v2->height, v2->width);
+    for (int i = 0; i < len1; i++) {
+        for (int j = 0; j < len2; j++) {
+            MAT_CELL(s, i, j) = MAT_DATA(v1)[i] * MAT_DATA(v2)[j];
         }
     }
 
@@ -637,7 +764,7 @@ Matrix *outer(Matrix *v1, Matrix *v2) {
 /*
  * Check if two matrices are equal
  */
-bool are_equal(Matrix *m1, Matrix *m2, fp tol) {
+bool are_equal(const Matrix *m1, const Matrix *m2, fp tol) {
     if (m1->height != m2->height || m1->width != m2->width)
         return false;
 
@@ -653,35 +780,35 @@ bool are_equal(Matrix *m1, Matrix *m2, fp tol) {
 /*
  * Check if a matrix is square
  */
-bool is_square(Matrix *m) {
+bool is_square(const Matrix *m) {
     return m->height == m->width;
 }
 
 /*
  * Check if a matrix is a vector
  */
-bool is_vector(Matrix *m) {
+bool is_vector(const Matrix *m) {
     return m->height == 1 || m->width == 1;
 }
 
 /*
  * Check if a matrix is a row vector
  */
-bool is_row_vector(Matrix *m) {
+bool is_row_vector(const Matrix *m) {
     return m->height == 1;
 }
 
 /*
  * Check if a matrix is a column vector
  */
-bool is_col_vector(Matrix *m) {
+bool is_col_vector(const Matrix *m) {
     return m->width == 1;
 }
 
 /*
  * Copy the values on the diagonal of a matrix into a new column vector
  */
-Matrix *diagonal(Matrix *m) {
+Matrix *diagonal(const Matrix *m) {
     // Get minimum between height and width
     int dim = (m->height > m->width ? m->width : m->height);
     Matrix *d = new_vec(dim);
@@ -696,10 +823,10 @@ Matrix *diagonal(Matrix *m) {
 /*
  * Set cells below the main diagonal to zero (in-place operation, it modifies the matrix)
  */
-void tri_up(Matrix **m) {
-    for (int i = 0; i < (*m)->height; i++) {
+void tri_up(const Matrix *m) {
+    for (int i = 0; i < m->height; i++) {
         for (int j = 0; j < i; j++) {
-            MAT_CELL(*m, i, j) = 0;
+            MAT_CELL(m, i, j) = 0;
         }
     }
 }
@@ -707,7 +834,7 @@ void tri_up(Matrix **m) {
 /*
  * Slice given matrix and return a new matrix
  */
-Matrix *read_slice(Matrix *m, int row_start, int row_stop, int col_start, int col_stop) {
+Matrix *read_slice(const Matrix *m, const int  row_start, const int  row_stop, const int  col_start, const int  col_stop) {
     // Input check
     assert(0 <= row_start && row_start < m->height, "The row_start argument is out of bounds.");
     assert(0 <= row_stop && row_stop < m->height, "The row_stop argument is out of bounds.");
@@ -730,18 +857,18 @@ Matrix *read_slice(Matrix *m, int row_start, int row_stop, int col_start, int co
 /*
  * Write into sliced matrix, modifying it
  */
-void write_slice(Matrix **m1, Matrix *m2, int row_start, int col_start) {
+void write_slice(const Matrix *m1, const Matrix *m2, const int  row_start, const int  col_start) {
     int row_stop = row_start + m2->height - 1;
     int col_stop = col_start + m2->width - 1;
     // Input check
-    assert(0 <= row_start && row_start < (*m1)->height, "The row_start argument is out of bounds.");
-    assert(0 <= row_stop && row_stop < (*m1)->height, "The row_stop argument is out of bounds.");
-    assert(0 <= col_start && col_start < (*m1)->width, "The col_start argument is out of bounds.");
-    assert(0 <= col_stop && col_stop < (*m1)->width, "The col_stop argument is out of bounds.");
+    assert(0 <= row_start && row_start < m1->height, "The row_start argument is out of bounds.");
+    assert(0 <= row_stop && row_stop < m1->height, "The row_stop argument is out of bounds.");
+    assert(0 <= col_start && col_start < m1->width, "The col_start argument is out of bounds.");
+    assert(0 <= col_stop && col_stop < m1->width, "The col_stop argument is out of bounds.");
 
     for (int i = row_start; i <= row_stop; i++) {
         for (int j = col_start; j <= col_stop; j++) {
-            MAT_CELL(*m1, i, j) = MAT_CELL(m2, i - row_start, j - col_start);
+            MAT_CELL(m1, i, j) = MAT_CELL(m2, i - row_start, j - col_start);
         }
     }
 }
@@ -749,7 +876,7 @@ void write_slice(Matrix **m1, Matrix *m2, int row_start, int col_start) {
 /*
  * Extract the k-th row, creating a new vector
  */
-Matrix *extract_row(Matrix *m, int k) {
+Matrix *extract_row(const Matrix *m, const int  k) {
     assert(0 <= k && k < m->height, "Index is out of bounds for rows.");
     Matrix *r = new_mat(1, m->width);
 
@@ -763,7 +890,7 @@ Matrix *extract_row(Matrix *m, int k) {
 /*
  * Extract the k-th column, creating a new vector
  */
-Matrix *extract_col(Matrix *m, int k) {
+Matrix *extract_col(const Matrix *m, const int  k) {
     assert(0 <= k && k < m->width, "Index is out of bounds for columns.");
     Matrix *c = new_vec(m->height);
 
@@ -777,33 +904,33 @@ Matrix *extract_col(Matrix *m, int k) {
 /*
  * Copy the values from a vector into the specified matrix row (it modifies the matrix)
  */
-void paste_row(Matrix **m, Matrix *r, int k) {
-    assert(0 <= k && k < (*m)->height, "Index is out of bounds for rows.");
+void paste_row(const Matrix *m, const Matrix *r, const int  k) {
+    assert(0 <= k && k < m->height, "Index is out of bounds for rows.");
     assert(is_row_vector(r), "The second matrix should be a row vector (i.e. with height equal to 1).");
-    assert((*m)->width == r->width, "The width of the first matrix and the length of the row vector (i.e. its width) should be the same.");
+    assert(m->width == r->width, "The width of the first matrix and the length of the row vector (i.e. its width) should be the same.");
 
-    for (int i = 0; i < (*m)->width; i++) {
-        MAT_CELL(*m, k, i) = MAT_CELL(r, 0, i);
+    for (int i = 0; i < m->width; i++) {
+        MAT_CELL(m, k, i) = MAT_CELL(r, 0, i);
     }
 }
 
 /*
  * Copy the values from a vector into the specified matrix column (it modifies the matrix)
  */
-void paste_col(Matrix **m, Matrix *c, int k) {
-    assert(0 <= k && k < (*m)->width, "Index is out of bounds for columns.");
+void paste_col(const Matrix *m, const Matrix *c, const int  k) {
+    assert(0 <= k && k < m->width, "Index is out of bounds for columns.");
     assert(is_col_vector(c), "The second matrix should be a column vector (i.e. with width equal to 1).");
-    assert((*m)->height == c->height, "The height of the first matrix and the length of the column vector (i.e. its height) should be the same.");
+    assert(m->height == c->height, "The height of the first matrix and the length of the column vector (i.e. its height) should be the same.");
 
-    for (int i = 0; i < (*m)->height; i++) {
-        MAT_CELL(*m, i, k) = MAT_CELL(c, i, 0);
+    for (int i = 0; i < m->height; i++) {
+        MAT_CELL(m, i, k) = MAT_CELL(c, i, 0);
     }
 }
 
 /*
  * Prints a matrix to standard output
  */
-void print_mat(Matrix *m) {
+void print_mat(const Matrix *m) {
     for (int i = 0; i < m->height; i++) {
         for (int j = 0; j < m->width; j++) {
             printf("%.5f ", MAT_CELL(m, i, j));
@@ -815,7 +942,7 @@ void print_mat(Matrix *m) {
 /*
  * Write a matrix to a binary file
  */
-void write_mat(const char *path, Matrix *m) {
+void write_mat(const char *path, const Matrix *m) {
     // Open file
     FILE *file = fopen(path, "wb");
     assert(file != NULL, "Cannot open or create file.");
@@ -837,7 +964,7 @@ void write_mat(const char *path, Matrix *m) {
 /*
  * Create a matrix with given height and width from an array of data
  */
-Matrix *from_array(const fp *data, int height, int width) {
+Matrix *from_array(const fp *data, const int  height, const int  width) {
     Matrix *s = new_mat(height, width);
 
     int d_idx = 0;
@@ -853,7 +980,7 @@ Matrix *from_array(const fp *data, int height, int width) {
 /*
  * Copy a matrix into a new matrix
  */
-Matrix *copy_mat(Matrix *m) {
+Matrix *copy_mat(const Matrix *m) {
     Matrix *s = new_mat(m->height, m->width);
 
     for (int i = 0; i < m->height; i++) {

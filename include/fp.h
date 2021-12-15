@@ -11,12 +11,15 @@
  * Data type declaration and macros
  */
 typedef float fp;
+#define MAX(x, y) (((x) >= (y)) ? x : y)
+#define POW powf
 #define SQRT sqrtf
 #define LOG logf
-#define SIN sinf
-#define ABS fabsf
-#define TANH tanhf
 #define EXP expf
+#define SIN sinf
+#define TANH tanhf
+#define ABS fabsf
+#define MOD fmodf
 #define PI 3.14159265358979323846f
 
 #endif //FAST_ICA_FP_H

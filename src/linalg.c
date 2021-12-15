@@ -41,9 +41,9 @@ Matrix *to_hessenberg(Matrix *m) {
         h_k = read_slice(h, k + 1, n - 1, k, n - 1);
         Matrix *tmp1 = mat_mul_trans1(v_k, h_k);
         Matrix *tmp2 = outer(v_k, tmp1);
-        scale_(&tmp2, tau);
-        sub_mat_(&h_k, tmp2);
-        write_slice(&h, h_k, k + 1, k);
+        scale_(tmp2, tau);
+        sub_mat_(h_k, tmp2);
+        write_slice(h, h_k, k + 1, k);
         free_mat(h_k);
         free_mat(tmp1);
         free_mat(tmp2);
@@ -53,9 +53,9 @@ Matrix *to_hessenberg(Matrix *m) {
         h_k = read_slice(h, 0, n - 1, k + 1, n - 1);
         tmp1 = mat_mul(h_k, v_k);
         tmp2 = mat_mul_trans2(tmp1, v_k);
-        scale_(&tmp2, tau);
-        sub_mat_(&h_k, tmp2);
-        write_slice(&h, h_k, 0, k + 1);
+        scale_(tmp2, tau);
+        sub_mat_(h_k, tmp2);
+        write_slice(h, h_k, 0, k + 1);
         free_mat(h_k);
         free_mat(tmp1);
         free_mat(tmp2);
@@ -85,9 +85,9 @@ Tuple *qr_decomposition(Matrix *m) {
         Matrix *h = eye(n);
         Matrix *h_k = read_slice(h, k, n - 1, k, n - 1);
         Matrix *tmp = mat_mul_trans2(v_k, v_k);
-        scale_(&tmp, tau);
-        sub_mat_(&h_k, tmp);
-        write_slice(&h, h_k, k, k);
+        scale_(tmp, tau);
+        sub_mat_(h_k, tmp);
+        write_slice(h, h_k, k, k);
         free_mat(h_k);
         free_mat(tmp);
 
@@ -106,7 +106,7 @@ Tuple *qr_decomposition(Matrix *m) {
         free_mat(v_k);
     }
     // Make R upper triangular
-    tri_up(&r);
+    tri_up(r);
 
     // Pack Q and R into tuple
     Tuple *qr = new_tuple(q, r);
@@ -128,10 +128,10 @@ Matrix *solve_eig_vals(Matrix *m, fp tol, int max_iter) {
     while (k > 0 && i < max_iter) {
         // Obtain the shift from the lower right corner of the matrix.
         Matrix *mu = eye(k + 1);
-        scale_(&mu, MAT_CELL(t, k, k));
+        scale_(mu, MAT_CELL(t, k, k));
 
         // Shift T matrix and perform QR on shifted matrix
-        sub_mat_(&t, mu);
+        sub_mat_(t, mu);
         Tuple *qr = qr_decomposition(t);
         Matrix *q = qr->m1;
         Matrix *r = qr->m2;
@@ -139,7 +139,7 @@ Matrix *solve_eig_vals(Matrix *m, fp tol, int max_iter) {
         // Multiply R*Q and shift back result
         free_mat(t);
         t = mat_mul(r, q);
-        add_mat_(&t, mu);
+        add_mat_(t, mu);
 
         // Free memory
         free_mat(mu);
@@ -176,7 +176,7 @@ Matrix *inv_iter(fp eig_val, Matrix *m, fp tol, int max_iter) {
     fp lambda = eig_val + uniform_rand() * 1e-6f;
     // Compute M' = M - lambda * I
     Matrix *lambda_i = eye(m->height);
-    scale_(&lambda_i, lambda);
+    scale_(lambda_i, lambda);
     Matrix *m_prime = sub_mat(m, lambda_i);
 
     // Initialize vector randomly
@@ -196,12 +196,12 @@ Matrix *inv_iter(fp eig_val, Matrix *m, fp tol, int max_iter) {
         // If the first entry of the current estimate is negative,
         // swap the sign to improve convergence
         if (MAT_CELL(eig_vec, 0, 0) < 0) {
-            scale_(&eig_vec, -1);
+            scale_(eig_vec, -1);
         }
 
         // Normalize estimate
         fp v_norm = norm(eig_vec);
-        scale_(&eig_vec, 1 / v_norm);
+        scale_(eig_vec, 1 / v_norm);
 
         i++;
     } while ((!are_equal(eig_vec, prev, tol)) && i < max_iter);
@@ -225,7 +225,7 @@ Matrix *solve_eig_vecs(Matrix *eig_vals, Matrix *m, fp tol, int max_iter) {
         // Compute current eigenvector
         Matrix *eig_vec = inv_iter(eig_val, m, tol, max_iter);
         // Insert it into i-th column of output matrix
-        paste_col(&eig_vecs, eig_vec, i);
+        paste_col(eig_vecs, eig_vec, i);
         free_mat(eig_vec);
     }
 
@@ -236,7 +236,7 @@ Matrix *solve_eig_vecs(Matrix *eig_vals, Matrix *m, fp tol, int max_iter) {
  * Compute the eigenvalues and eigenvectors of a square matrix by means of QR decomposition
  */
 Tuple *solve_eig(Matrix *m) {
-    fp tol = 1e-10f;
+    fp tol = 1e-7f;
     int max_iter = 3000;
     Matrix *eig_vals = solve_eig_vals(m, tol, max_iter);
     Matrix *eig_vecs = solve_eig_vecs(eig_vals, m, tol, max_iter);
@@ -317,7 +317,7 @@ Matrix *covariance(Matrix *x, bool center_data) {
 
     // Normalize
     fp fact = 1 / ((fp) n_samples - 1);
-    scale_(&x_cov, fact);
+    scale_(x_cov, fact);
 
     return x_cov;
 }

@@ -11,10 +11,10 @@ int main(int argc, char **argv) {
     FastICAStrategy strategy = Parallel;
     GFunc g_function = LogCosh;
     int g_selector;
-    int n_samples = 1000;
-    fp sampling_window_size = 10;
     fp threshold = 1e-4f;
     int max_iter = 3000;
+    int s_len = 10;
+    int s_rate = 100;
     bool add_noise = true;
     bool verbose = false;
     // Read input args
@@ -25,17 +25,17 @@ int main(int argc, char **argv) {
         case 8:
             add_noise = (int) strtol(argv[7], &end, 2);
         case 7:
-            max_iter = (int) strtol(argv[6], &end, 10);
-            assert(max_iter > 0, "The maximum number of iteration must be positive.");
+            s_rate = (int) strtol(argv[6], &end, 10);
+            assert(s_rate > 0, "The sampling rate must be positive.");
         case 6:
-            threshold = (fp) strtof(argv[5], &end);
-            assert(threshold > 0, "The threshold must be positive.");
+            s_len = (int) strtol(argv[5], &end, 10);
+            assert(s_len > 0, "The length of the signal must be positive.");
         case 5:
-            sampling_window_size = (fp) strtof(argv[4], &end);
-            assert(sampling_window_size > 0, "The sampling window size must be positive.");
+            max_iter = (int) strtol(argv[4], &end, 10);
+            assert(max_iter > 0, "The maximum number of iteration must be positive.");
         case 4:
-            n_samples = (int) strtol(argv[3], &end, 10);
-            assert(n_samples > 0, "The number of samples must be positive.");
+            threshold = (fp) strtof(argv[3], &end);
+            assert(threshold > 0, "The threshold must be positive.");
         case 3:
             g_selector = (int) strtol(argv[2], &end, 4);
             switch (g_selector) {
@@ -60,22 +60,26 @@ int main(int argc, char **argv) {
         case 1:
             break;
         default:
-            printf("Usage: fast_ica [STRATEGY [G_FUNCTION [N_SAMPLES [SAMPLING_WINDOW_SIZE [THRESHOLD [ MAX_ITER [ADD_NOISE [VERBOSE]]]]]]]");
+            printf("Usage: fast_ica [STRATEGY [G_FUNCTION [THRESHOLD [MAX_ITER [S_LEN [S_RATE [ADD_NOISE [VERBOSE]]]]]]]]");
             exit(-1);
     }
+    int n_samples = s_len * s_rate;
     set_prng_seed(42);  // set seed
 
     // Create matrix S of original signals (n_components, n_samples)
-    Matrix *s = generate_signals(n_samples, sampling_window_size, add_noise);
+    Matrix *s = generate_signals(n_samples, (fp) s_len, add_noise);
+    // Standardize signal
+    Matrix *s_std = col_std(s);
+    div_col_(s, s_std);
     if (verbose) {
         printf("Original signals:\n");
         print_mat(s);
     }
 
-    write_mat("../S.bin", s);
+    write_mat("./S.bin", s);
 
     // Create mixing matrix A (n_components, n_components)
-    fp a_data[] = {1, 1, 1, 0.5f, 2, 1, 1.5f, 1, 2, 2, 1, 1.7f};
+    fp a_data[] = {1, 1, 1, 0.5f, 2, 1, 1.5f, 1, 2, 0.3f, 0.9f, 1.7f};
     Matrix *a = from_array(a_data, 4, 3);
     if (verbose) {
         printf("Mixing matrix:\n");
@@ -90,7 +94,7 @@ int main(int argc, char **argv) {
         printf("\n");
     }
 
-    write_mat("../X.bin", x);
+    write_mat("./X.bin", x);
 
     // Perform FastICA
     Matrix *s_ = fast_ica(x, 3, true, strategy, g_function, threshold, max_iter);
@@ -98,7 +102,7 @@ int main(int argc, char **argv) {
         printf("Restored signals:\n");
         print_mat(s_);
     }
-    write_mat("../S_.bin", s_);
+    write_mat("./S_.bin", s_);
 
     // Free memory
     free_mat(s);
