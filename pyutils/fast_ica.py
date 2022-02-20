@@ -1,9 +1,6 @@
 from typing import Optional, Tuple
 
 import numpy as np
-from matplotlib import pyplot as plt
-from scipy import signal
-from scipy import linalg
 
 
 def centering(x: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
@@ -24,7 +21,7 @@ def whitening(x: np.ndarray, n_components: int) -> np.ndarray:
     eig_vecs = eig_vecs[:, idx]
     # Construct diagonal matrix of eigenvalues
     eps = 1e-10
-    d = np.diag(1.0 / np.sqrt(eig_vals + eps))
+    d = np.diag(1.0 / (eig_vals + eps)**0.5)
 
     # Compute whitening matrix
     white_mtx = (d @ eig_vecs.T)[:n_components]

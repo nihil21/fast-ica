@@ -40,6 +40,8 @@ Matrix *linspace(fp start, fp stop, int n_samples);
  * Basic self-operations (the trailing underscore means that the operation is performed in-place)
  */
 fp norm(const Matrix *m);
+Matrix *row_norm(const Matrix *m);
+Matrix *col_norm(const Matrix *m);
 fp mean(const Matrix *m);
 Matrix *row_mean(const Matrix *m);
 Matrix *col_mean(const Matrix *m);

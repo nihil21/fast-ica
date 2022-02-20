@@ -7,7 +7,7 @@ add_executable(fast_ica src/main.c include/fp.h
         src/utils.c include/utils.h
         src/random.c include/random.h
         src/sorting.c include/sorting.h
-        src/tuple.c include/tuple.h
+        src/groups.c include/groups.h
         src/signal.c include/signal.h
         src/matrix.c include/matrix.h
         src/linalg.c include/linalg.h

@@ -6,6 +6,7 @@
 #include "../include/linalg.h"
 #include "../include/utils.h"
 #include "../include/random.h"
+#include "../include/sorting.h"
 
 /*
  * Compute a Householder reflection for a given real vector
@@ -69,7 +70,7 @@ Matrix *to_hessenberg(Matrix *m) {
 /*
  * QR decomposition using Householder reflections
  */
-Tuple *qr_decomposition(Matrix *m) {
+Pair *qr_decomposition(Matrix *m) {
     int n = m->height;
     Matrix *r = copy_mat(m);
     Matrix *q = eye(n);
@@ -109,7 +110,7 @@ Tuple *qr_decomposition(Matrix *m) {
     tri_up(r);
 
     // Pack Q and R into tuple
-    Tuple *qr = new_tuple(q, r);
+    Pair *qr = new_pair(q, r);
 
     return qr;
 }
@@ -132,7 +133,7 @@ Matrix *solve_eig_vals(Matrix *m, fp tol, int max_iter) {
 
         // Shift T matrix and perform QR on shifted matrix
         sub_mat_(t, mu);
-        Tuple *qr = qr_decomposition(t);
+        Pair *qr = qr_decomposition(t);
         Matrix *q = qr->m1;
         Matrix *r = qr->m2;
 
@@ -143,7 +144,7 @@ Matrix *solve_eig_vals(Matrix *m, fp tol, int max_iter) {
 
         // Free memory
         free_mat(mu);
-        free_tuple(qr, true);
+        free_pair(qr, true);
 
         if (ABS(MAT_CELL(t, k, k - 1)) < tol) {
             MAT_CELL(eig_vals, k, 0) = MAT_CELL(t, k, k);
@@ -235,14 +236,14 @@ Matrix *solve_eig_vecs(Matrix *eig_vals, Matrix *m, fp tol, int max_iter) {
 /*
  * Compute the eigenvalues and eigenvectors of a square matrix by means of QR decomposition
  */
-Tuple *solve_eig(Matrix *m) {
+Pair *solve_eig(Matrix *m) {
     fp tol = 1e-7f;
     int max_iter = 3000;
     Matrix *eig_vals = solve_eig_vals(m, tol, max_iter);
     Matrix *eig_vecs = solve_eig_vecs(eig_vals, m, tol, max_iter);
 
-    // Pack eigenvalues and eigenvectors into tuple
-    Tuple *eigen = new_tuple(eig_vals, eig_vecs);
+    // Pack eigenvalues and eigenvectors into a pair
+    Pair *eigen = new_pair(eig_vals, eig_vecs);
 
     return eigen;
 }
@@ -276,7 +277,7 @@ Matrix *back_substitution(Matrix *u, Matrix *y) {
 Matrix *lin_solve(Matrix *a, Matrix *b) {
     assert(is_col_vector(b), "Matrix B should be a column vector.");
     // Decompose matrix A using QR
-    Tuple *qr = qr_decomposition(a);
+    Pair *qr = qr_decomposition(a);
     Matrix *q = qr->m1;
     Matrix *r = qr->m2;
 
@@ -286,10 +287,75 @@ Matrix *lin_solve(Matrix *a, Matrix *b) {
     Matrix *x = back_substitution(r, y);
 
     // Free memory
-    free_tuple(qr, true);
+    free_pair(qr, true);
     free_mat(y);
 
     return x;
+}
+
+void eigen_sort(Matrix *eig_vals, Matrix *eig_vecs) {
+    int n_eig = eig_vals->height;
+    // Sort eigenvalues in descending order
+    int* sort_idx = quick_sort(eig_vals->data, n_eig, true);
+
+    // Reorder eig_vecs according to sort_idx
+    Matrix *eig_vecs_copy = copy_mat(eig_vecs);
+    for (int i = 0; i < n_eig; i++) {
+        int idx = sort_idx[i];
+        Matrix *eig_vec = extract_col(eig_vecs_copy, idx);
+        write_slice(eig_vecs, eig_vec, 0, i);
+
+        free_mat(eig_vec);
+    }
+
+    // Free memory
+    free(sort_idx);
+    free_mat(eig_vecs_copy);
+}
+
+/*
+ * Compute the Singular Value Decomposition of a given matrix
+ */
+Triplet *svd(Matrix *x) {
+    // Compute x.T @ x
+    Matrix *c = mat_mul_trans1(x, x);
+    // Find eigenvalues and eigenvectors
+    Pair *eigen = solve_eig(c);
+    free_mat(c);
+    Matrix *eig_vals = eigen->m1;
+    Matrix *eig_vecs = eigen->m2;
+    // Sort eigenvalues and eigenvectors
+    eigen_sort(eig_vals, eig_vecs);
+
+    // Compute matrix of singular values
+    Matrix *s = new_mat(x->height, x->width);
+    Matrix *s_inv = new_mat(x->width, x->height);
+    for (int i = 0; i < eig_vals->height; i++) {
+        fp s_val = SQRT(ABS(MAT_CELL(eig_vals, i, 0)));
+        MAT_CELL(s, i, i) = s_val;
+        MAT_CELL(s_inv, i, i) = 1 / s_val;
+    }
+    Matrix *s_diag = diagonal(s);
+    free_mat(s);
+
+    // Compute right singular vectors
+    Matrix *eig_vec_norm = row_norm(eig_vecs);
+    Matrix *v = div_row(eig_vecs, eig_vec_norm);
+    free_mat(eig_vec_norm);
+    Matrix *vt = transpose(v);
+
+    // Compute left singular vectors
+    Matrix *tmp = mat_mul(v, s_inv);
+    free_mat(v);
+    free_mat(s_inv);
+    Matrix *u = mat_mul(x, tmp);
+    free_mat(tmp);
+
+    free_pair(eigen, true);
+
+    // Pack U, S and Vt in a triplet
+    Triplet *svd_ret = new_triplet(u, s_diag, vt);
+    return svd_ret;
 }
 
 /*

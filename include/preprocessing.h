@@ -5,9 +5,9 @@
 #ifndef FAST_ICA_PREPROCESSING_H
 #define FAST_ICA_PREPROCESSING_H
 
-#include "tuple.h"
+#include "groups.h"
 
-Tuple *center(Matrix *x);
-Tuple *whitening(Matrix *x, bool center_data, int n_components);
+Pair *center(Matrix *x);
+Pair *whitening(Matrix *x, bool center_data);
 
 #endif //FAST_ICA_PREPROCESSING_H

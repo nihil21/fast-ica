@@ -13,12 +13,11 @@
  */
 Matrix *new_mat(const int height, const int width) {
     assert(height > 0 && width > 0, "Matrix height and width should be greater than 0.");
-    Matrix *m = NULL;
-    m = calloc(1, sizeof(Matrix));
+    Matrix *m = calloc(1, sizeof(Matrix));
     assert(m != NULL, "Could not allocate matrix.");
 
-    m->data = NULL;
     m->data = calloc(height * width, sizeof(fp));
+    assert(m->data != NULL, "Could not allocate matrix data.");
     m->height = height;
     m->width = width;
 
@@ -131,6 +130,41 @@ fp norm(const Matrix *m) {
         }
     }
     return SQRT(acc);
+}
+
+/*
+ * Get the norm of a given matrix along rows
+ */
+Matrix *row_norm(const Matrix *m) {
+    Matrix *r = new_mat(1, m->width);  // row vector
+
+    // Memory access not contiguous
+    for (int j = 0; j < m->width; j++) {
+        fp acc = 0;
+        for (int i = 0; i < m->height; i++) {
+            acc += MAT_CELL(m, i, j) * MAT_CELL(m, i, j);
+        }
+        MAT_CELL(r, 0, j) = SQRT(acc);
+    }
+
+    return r;
+}
+
+/*
+ * Get the norm of a given matrix along columns
+ */
+Matrix *col_norm(const Matrix *m) {
+    Matrix *c = new_vec(m->height);  // column vector
+
+    for (int i = 0; i < m->height; i++) {
+        fp acc = 0;
+        for (int j = 0; j < m->width; j++) {
+            acc += MAT_CELL(m, i, j) * MAT_CELL(m, i, j);
+        }
+        MAT_CELL(c, i, 0) = SQRT(acc);
+    }
+
+    return c;
 }
 
 /*
@@ -354,7 +388,7 @@ Matrix *add_row(const Matrix *m, const Matrix *r) {
     // Memory access not contiguous
     for (int i = 0; i < m->height; i++) {
         for (int j = 0; j < m->width; j++) {
-            MAT_CELL(s, i, j) = MAT_CELL(m, i, j) + MAT_CELL(r, 0, i);
+            MAT_CELL(s, i, j) = MAT_CELL(m, i, j) + MAT_CELL(r, 0, j);
         }
     }
 
@@ -370,7 +404,7 @@ void add_row_(const Matrix *m, const Matrix *r) {
 
     for (int i = 0; i < m->height; i++) {
         for (int j = 0; j < m->width; j++) {
-            MAT_CELL(m, i, j) += MAT_CELL(r, 0, i);
+            MAT_CELL(m, i, j) += MAT_CELL(r, 0, j);
         }
     }
 }
@@ -445,7 +479,7 @@ Matrix *sub_row(const Matrix *m, const Matrix *r) {
 
     for (int i = 0; i < m->height; i++) {
         for (int j = 0; j < m->width; j++) {
-            MAT_CELL(s, i, j) = MAT_CELL(m, i, j) - MAT_CELL(r, 0, i);
+            MAT_CELL(s, i, j) = MAT_CELL(m, i, j) - MAT_CELL(r, 0, j);
         }
     }
 
@@ -461,7 +495,7 @@ void sub_row_(const Matrix *m, const Matrix *r) {
 
     for (int i = 0; i < m->height; i++) {
         for (int j = 0; j < m->width; j++) {
-            MAT_CELL(m, i, j) -= MAT_CELL(r, 0, i);
+            MAT_CELL(m, i, j) -= MAT_CELL(r, 0, j);
         }
     }
 }
@@ -536,7 +570,7 @@ Matrix *hadamard_row(const Matrix *m, const Matrix *r) {
 
     for (int i = 0; i < m->height; i++) {
         for (int j = 0; j < m->width; j++) {
-            MAT_CELL(s, i, j) = MAT_CELL(m, i, j) * MAT_CELL(r, 0, i);
+            MAT_CELL(s, i, j) = MAT_CELL(m, i, j) * MAT_CELL(r, 0, j);
         }
     }
 
@@ -552,7 +586,7 @@ void hadamard_row_(const Matrix *m, const Matrix *r) {
 
     for (int i = 0; i < m->height; i++) {
         for (int j = 0; j < m->width; j++) {
-            MAT_CELL(m, i, j) *= MAT_CELL(r, 0, i);
+            MAT_CELL(m, i, j) *= MAT_CELL(r, 0, j);
         }
     }
 }
@@ -600,6 +634,8 @@ Matrix *div_mat(const Matrix *m1, const Matrix *m2) {
             MAT_CELL(s, i, j) = MAT_CELL(m1, i, j) / MAT_CELL(m2, i, j);
         }
     }
+
+    return s;
 }
 
 /*
@@ -625,9 +661,11 @@ Matrix *div_row(const Matrix *m, const Matrix *r) {
 
     for (int i = 0; i < m->height; i++) {
         for (int j = 0; j < m->width; j++) {
-            MAT_CELL(s, i, j) = MAT_CELL(m, i, j) / MAT_CELL(r, 0, i);
+            MAT_CELL(s, i, j) = MAT_CELL(m, i, j) / MAT_CELL(r, 0, j);
         }
     }
+
+    return s;
 }
 
 /*
@@ -639,7 +677,7 @@ void div_row_(const Matrix *m, const Matrix *r) {
 
     for (int i = 0; i < m->height; i++) {
         for (int j = 0; j < m->width; j++) {
-            MAT_CELL(m, i, j) /= MAT_CELL(r, 0, i);
+            MAT_CELL(m, i, j) /= MAT_CELL(r, 0, j);
         }
     }
 }
@@ -657,6 +695,8 @@ Matrix *div_col(const Matrix *m, const Matrix *c) {
             MAT_CELL(s, i, j) = MAT_CELL(m, i, j) / MAT_CELL(c, i, 0);
         }
     }
+
+    return s;
 }
 
 /*

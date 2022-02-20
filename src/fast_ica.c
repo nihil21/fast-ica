@@ -10,7 +10,7 @@
 /*
  * LogCosh function
  */
-Tuple *logcosh_f(Matrix *x) {
+Pair *logcosh_f(Matrix *x) {
     fp alpha = 1.f;
     Matrix *gx = new_mat(x->height, x->width);
     Matrix *gx_prime = new_mat(x->height, x->width);
@@ -23,14 +23,14 @@ Tuple *logcosh_f(Matrix *x) {
     }
 
     // Pack Gx and Gx' into a tuple
-    Tuple *res = new_tuple(gx, gx_prime);
+    Pair *res = new_pair(gx, gx_prime);
     return res;
 }
 
 /*
  * Exponential function
  */
-Tuple *exp_f(Matrix *x) {
+Pair *exp_f(Matrix *x) {
     Matrix *gx = new_mat(x->height, x->width);
     Matrix *gx_prime = new_mat(x->height, x->width);
 
@@ -43,14 +43,14 @@ Tuple *exp_f(Matrix *x) {
     }
 
     // Pack Gx and Gx' into a tuple
-    Tuple *res = new_tuple(gx, gx_prime);
+    Pair *res = new_pair(gx, gx_prime);
     return res;
 }
 
 /*
  * Cube function
  */
-Tuple *cube_f(Matrix *x) {
+Pair *cube_f(Matrix *x) {
     Matrix *gx = new_mat(x->height, x->width);
     Matrix *gx_prime = new_mat(x->height, x->width);
 
@@ -63,14 +63,14 @@ Tuple *cube_f(Matrix *x) {
     }
 
     // Pack Gx and Gx' into a tuple
-    Tuple *res = new_tuple(gx, gx_prime);
+    Pair *res = new_pair(gx, gx_prime);
     return res;
 }
 
 /*
  * Abs function
  */
-Tuple *abs_f(Matrix *x) {
+Pair *abs_f(Matrix *x) {
     Matrix *gx = new_mat(x->height, x->width);
     Matrix *gx_prime = new_mat(x->height, x->width);
 
@@ -82,7 +82,7 @@ Tuple *abs_f(Matrix *x) {
     }
 
     // Pack Gx and Gx' into a tuple
-    Tuple *res = new_tuple(gx, gx_prime);
+    Pair *res = new_pair(gx, gx_prime);
     return res;
 }
 
@@ -107,7 +107,7 @@ void gram_schmidt_decorrelation(Matrix *w_i_new, Matrix *w, int i) {
 void symmetric_decorrelation(Matrix **w) {
     Matrix *w_wt = mat_mul_trans2(*w, *w);
     // Compute eigenvalues and eigenvectors
-    Tuple *eigen = solve_eig(w_wt);
+    Pair *eigen = solve_eig(w_wt);
     free_mat(w_wt);
     Matrix *eig_vals = eigen->m1;  // column vector
     Matrix *eig_vecs = eigen->m2;
@@ -123,14 +123,14 @@ void symmetric_decorrelation(Matrix **w) {
 
     free_mat(*w);
     *w = mat_mul(eig_vecs, tmp2);
-    free_tuple(eigen, true);
+    free_pair(eigen, true);
     free_mat(tmp2);
 }
 
 /*
  * Implement FastICA deflationary strategy
  */
-Matrix *ica_def(Matrix *x_w, Tuple *(*g_func)(Matrix *), fp threshold, int max_iter) {
+Matrix *ica_def(Matrix *x_w, Pair *(*g_func)(Matrix *), fp threshold, int max_iter) {
     int n_units = x_w->height;
     int n_samples = x_w->width;
 
@@ -146,7 +146,7 @@ Matrix *ica_def(Matrix *x_w, Tuple *(*g_func)(Matrix *), fp threshold, int max_i
             // (1, n_units) @ (n_units, n_samples) -> (1, n_samples)
             Matrix *ws = mat_mul(w_k, x_w);
             // Compute G_Ws and G_Ws'
-            Tuple *res = g_func(ws);
+            Pair *res = g_func(ws);
             free_mat(ws);
             Matrix *g_ws = res->m1;  // (1, n_samples)
             Matrix *gw_s_prime = res->m2;  // (1, n_samples)
@@ -156,7 +156,7 @@ Matrix *ica_def(Matrix *x_w, Tuple *(*g_func)(Matrix *), fp threshold, int max_i
             scale_(a, 1 / (fp) n_samples);
             // (1, n_units) * E[(1, n_samples)] -> (1, n_units)
             Matrix *b = scale(w_k, mean(gw_s_prime));
-            free_tuple(res, true);
+            free_pair(res, true);
 
             // Compute new weight
             Matrix *w_k_new = sub_mat(a, b);  // (1, n_units)
@@ -188,7 +188,7 @@ Matrix *ica_def(Matrix *x_w, Tuple *(*g_func)(Matrix *), fp threshold, int max_i
 /*
  * Implement FastICA parallel strategy
  */
-Matrix *ica_par(Matrix *x_w, Tuple *(*g_func)(Matrix *), fp threshold, int max_iter) {
+Matrix *ica_par(Matrix *x_w, Pair *(*g_func)(Matrix *), fp threshold, int max_iter) {
     int n_units = x_w->height;
     int n_samples = x_w->width;
 
@@ -200,7 +200,7 @@ Matrix *ica_par(Matrix *x_w, Tuple *(*g_func)(Matrix *), fp threshold, int max_i
         // (n_units, n_units) @ (n_units, n_samples) -> (n_units, n_samples)
         Matrix *ws = mat_mul(w, x_w);
         // Compute G_Ws and G_Ws'
-        Tuple *res = g_func(ws);
+        Pair *res = g_func(ws);
         free_mat(ws);
         Matrix *g_ws = res->m1;  // (n_units, n_samples)
         Matrix *g_ws_prime = res->m2;  // (n_units, n_samples)
@@ -231,7 +231,7 @@ Matrix *ica_par(Matrix *x_w, Tuple *(*g_func)(Matrix *), fp threshold, int max_i
             free_mat(a_k);
             free_mat(b_k);
         }
-        free_tuple(res, true);
+        free_pair(res, true);
 
         // Compute new weight
         Matrix *w_new = sub_mat(a, b);
@@ -267,39 +267,32 @@ Matrix *ica_par(Matrix *x_w, Tuple *(*g_func)(Matrix *), fp threshold, int max_i
 /*
  * Perform FastICA on a (n_features, n_samples) matrix of observations
  */
-Matrix *fast_ica(Matrix *x, int n_components, bool whiten, FastICAStrategy strategy, GFunc g_func, fp threshold, int max_iter) {
-    int n_features = x->height;
-    int n_samples = x->width;
-
+Matrix *fast_ica(Matrix *x, bool whiten, FastICAStrategy strategy, GFunc g_func, fp threshold, int max_iter) {
     // Center and whiten, if specified
     Matrix *x_w;
     Matrix *white_mtx;
     Matrix *x_mean;
     if (whiten) {
-        int max_comp = n_features > n_samples ? n_features : n_samples;
-        if (n_components > max_comp)
-            n_components = max_comp;
-
         // Center
-        Tuple *CenterData = center(x);
+        Pair *CenterData = center(x);
         Matrix *x_c = CenterData->m1;
         x_mean = CenterData->m2;
 
         // Whiten
-        Tuple *WhitenData = whitening(x_c, false, n_components);
+        Pair *WhitenData = whitening(x_c, false);
         x_w = WhitenData->m1;
         white_mtx = WhitenData->m2;
 
         // Free memory
-        free_tuple(CenterData, false);
-        free_tuple(WhitenData, false);
+        free_pair(CenterData, false);
+        free_pair(WhitenData, false);
         free_mat(x_c);
     } else {
         x_w = x;
     }
 
     // Select non-quadratic function G
-    Tuple *(*g)(Matrix *);
+    Pair *(*g)(Matrix *);
     switch (g_func) {
         case LogCosh:
             g = &logcosh_f;
