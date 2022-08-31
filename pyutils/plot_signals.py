@@ -3,8 +3,8 @@ import struct
 import sys
 from typing import Dict
 
-from matplotlib import pyplot as plt
 import numpy as np
+from matplotlib import pyplot as plt
 
 
 def read_binary(filename: str, fp: Dict) -> np.ndarray:
@@ -32,11 +32,11 @@ def read_binary(filename: str, fp: Dict) -> np.ndarray:
 def plot_signals(s, x, s_) -> None:
     plt.figure(figsize=(15, 10))
 
-    models = [x, s, s_]
+    models = [s, x, s_]
     names = [
-        "Observations (mixed signal)",
-        "True Sources",
-        "ICA recovered signals",
+        "Source signals",
+        "Signal mixture",
+        "Signals recovered using ICA",
     ]
     plots = len(models)
 
