@@ -30,22 +30,21 @@ def read_binary(filename: str, fp: Dict) -> np.ndarray:
 
 
 def plot_signals(s, x, s_) -> None:
-    plt.figure(figsize=(15, 10))
-
     models = [s, x, s_]
     names = [
         "Source signals",
         "Signal mixture",
         "Signals recovered using ICA",
     ]
-    plots = len(models)
+    _, ax = plt.subplots(nrows=len(models), ncols=1, sharex="all", figsize=(15, 10))
 
-    for ii, (model, name) in enumerate(zip(models, names)):
-        plt.subplot(plots, 1, ii + 1)
-        plt.title(name)
+    for i, (model, name) in enumerate(zip(models, names)):
+        ax[i].set_title(name)
+        ax[i].set_ylabel("Amplitude [a.u.]")
         for sig in model:
-            plt.plot(sig)
-        plt.grid()
+            ax[i].plot(sig)
+        ax[i].grid()
+    plt.xlabel("Time [s]")
 
     plt.tight_layout()
     plt.show()
